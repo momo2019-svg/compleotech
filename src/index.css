@@ -1,0 +1,620 @@
+/* === Fonts & Theme ======================================================= */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* Dark = défaut */
+:root{
+  --bg:        #0b1020;
+  --bg-soft:   #0f172a;
+  --card:      #0f172a80;   /* semi glass */
+  --stroke:    #1f2937;
+  --ring:      #60a5fa;
+  --text:      #e5e7eb;
+  --muted:     #94a3b8;
+  --brand-1:   #2563eb;
+  --brand-2:   #8b5cf6;
+  --success:   #10b981;
+  --danger:    #ef4444;
+  --warn:      #f59e0b;
+
+  /* tokens communs */
+  --radius-lg: 16px;
+  --radius-md: 12px;
+  --radius-sm: 10px;
+
+  /* topbar */
+  --tb-h: 42px;
+}
+
+/* petites transitions globales */
+*{ box-sizing:border-box }
+html, body, #root{ height:100%; margin:0 }
+body,
+.card,.sidebar,.topbar,.navlink,.btn,.icon-btn,input,select,table,.search{
+  transition: background-color .2s ease, color .2s ease, border-color .2s ease, box-shadow .2s ease, transform .15s ease;
+}
+
+/* === Base (DARK) ========================================================= */
+body{
+  font-family: Inter, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  color: var(--text);
+  background:
+    radial-gradient(1200px 600px at -10% -10%, #1d2a51 0%, rgba(13,17,38,0) 60%),
+    radial-gradient(900px 500px at 110% 10%, #2b1659 0%, rgba(13,17,38,0) 55%),
+    linear-gradient(180deg, #0b1020 0%, #0b1020 100%);
+}
+
+/* === Layout ============================================================== */
+.layout{
+  display:grid; height:100%;
+  grid-template-columns:240px 1fr;
+  grid-template-rows:64px 1fr;
+  grid-template-areas:
+    "sidebar topbar"
+    "sidebar main";
+  gap: 12px;
+  padding: 12px;
+}
+
+/* === Sidebar ============================================================= */
+.sidebar{
+  grid-area: sidebar;
+  background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+  border: 1px solid var(--stroke);
+  border-radius: var(--radius-lg);
+  padding: 18px 12px;
+  display:flex; flex-direction:column;
+  box-shadow: 0 8px 24px rgba(0,0,0,.25);
+  backdrop-filter: blur(6px);
+}
+.brand{ display:flex; align-items:center; gap:10px; font-weight:700; font-size:16px; margin:4px 8px 18px; }
+.brand img{ width:40px }
+.brand span{
+  background: linear-gradient(90deg, var(--brand-1), var(--brand-2));
+  -webkit-background-clip: text; background-clip:text; color: transparent;
+}
+
+.navlink{
+  display:flex; align-items:center; justify-content:space-between;
+  color: var(--text);
+  text-decoration:none;
+  padding:10px 12px; margin:4px 6px;
+  border-radius: var(--radius-sm); font-weight:500; font-size:14px;
+  border:1px solid transparent;
+}
+.navlink:hover{ background: rgba(255,255,255,.05); border-color: var(--stroke); }
+.navlink.active{
+  background: linear-gradient(90deg, rgba(37,99,235,.25), rgba(139,92,246,.25));
+  border-color: #334155;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.04), 0 6px 14px rgba(37,99,235,.22);
+}
+.badge{
+  font-size:12px; padding:2px 8px; border-radius:999px;
+  background: rgba(239,68,68,.15); color:#fecaca; border:1px solid rgba(239,68,68,.35);
+}
+
+/* === Topbar (grid align + z-index + centre) ============================= */
+/* grille: gauche (scope) | centre (search) | droite (actions) */
+.topbar{
+  grid-area: topbar;
+
+  /* au-dessus des cartes/kpi */
+  position: relative;
+  z-index: 9999;
+  isolation: isolate;
+
+  display: grid !important;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas: "tb-left tb-center tb-right";
+  align-items: center !important;
+  gap: 12px; padding: 0 14px;
+
+  background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+  border:1px solid var(--stroke); border-radius: var(--radius-lg);
+  box-shadow: 0 8px 24px rgba(0,0,0,.25); backdrop-filter: blur(6px);
+}
+.topbar > *{ min-width:0 } /* évite que le centre pousse le reste */
+
+.tb-left  { grid-area: tb-left;  display:flex; align-items:center; gap:8px; justify-self:start }
+.tb-center{ grid-area: tb-center; display:flex; align-items:center; justify-content:center; min-width:0 }
+.tb-right { grid-area: tb-right;  display:flex; align-items:center; justify-content:flex-end; gap:8px }
+
+/* hauteur/alignements unifiés */
+.topbar .select,
+.topbar .search,
+.topbar .icon-btn,
+.topbar .pg-chip,
+.topbar .avatar-btn{
+  height: var(--tb-h);
+  display:inline-flex;
+  align-items:center;
+  padding-block: 0;
+}
+
+/* boutons icônes carrés */
+.topbar .icon-btn{ width: var(--tb-h); padding:0; line-height:1 }
+
+/* select & chip */
+.topbar .select{ padding: 0 10px }
+.topbar .pg-chip{ padding: 0 10px; border-radius: 999px }
+
+/* search centrée UNIQUEMENT au milieu */
+.tb-center .search{
+  width: 100%;
+  max-width: 720px;
+  border-radius: 999px;
+  padding: 0 12px;  /* 0 vertical = parfaitement centré */
+  margin: 0;
+}
+.topbar .search input{ height:100%; padding:0; margin:0 }
+
+/* avatar */
+.topbar .avatar-btn{ padding: 0 10px; border-radius:12px }
+.topbar .avatar{
+  width:22px; height:22px; border-radius:999px;
+  display:inline-flex; align-items:center; justify-content:center;
+  font-weight:700; background:#1f2937;
+}
+
+/* === Search (style générique) =========================================== */
+.search{
+  display:flex; align-items:center; gap:8px;
+  background: rgba(255,255,255,.05);
+  border:1px solid #334155; border-radius:12px; padding:8px 12px;
+}
+.search input{ background:transparent; border:none; outline:none; width:100%; color:var(--text) }
+.search:focus-within{ border-color: var(--ring); box-shadow: 0 0 0 3px rgba(96,165,250,.25) }
+
+/* === Buttons ============================================================= */
+.btn, .icon-btn{
+  border:1px solid #334155; background: rgba(255,255,255,.04);
+  color: var(--text); border-radius: var(--radius-sm); cursor:pointer; padding:8px 10px;
+}
+.icon-btn{ width:36px; height:36px; display:inline-flex; align-items:center; justify-content:center; line-height:0 }
+.btn:hover, .icon-btn:hover{ transform: translateY(-1px); border-color:#475569; background: rgba(255,255,255,.07) }
+.btn:active, .icon-btn:active{ transform:none }
+
+/* Accent button */
+.btn--brand{
+  background: linear-gradient(90deg, var(--brand-1), var(--brand-2));
+  border-color: transparent; color:#fff !important;
+  box-shadow: 0 10px 22px rgba(37,99,235,.25);
+}
+.btn--brand:hover{ filter: brightness(1.05) }
+
+/* Select */
+.select{
+  padding:8px 10px; border:1px solid #334155; border-radius: var(--radius-sm);
+  background: rgba(255,255,255,.04); color: var(--text); outline:none;
+}
+.select:focus{ border-color: var(--ring); box-shadow: 0 0 0 3px rgba(96,165,250,.25) }
+
+/* === Eléments “pro” topbar ============================================== */
+.select--pill{ border-radius:999px }
+.search--pill{ border-radius:999px }
+
+.pg-chip{
+  display:inline-flex; align-items:center; gap:6px;
+  padding:6px 10px; border-radius:999px; font-size:12px;
+  border:1px solid #334155; background: rgba(255,255,255,.04); color: var(--text);
+}
+
+.avatar-btn{
+  display:inline-flex; align-items:center; gap:8px;
+  border:1px solid #334155; background: rgba(255,255,255,.04);
+  padding:6px 10px; border-radius:12px; cursor:pointer; color: var(--text);
+}
+.avatar-info{ display:flex; flex-direction:column; line-height:1 }
+.avatar-info .role{ font-size:12px; opacity:.9 }
+.avatar-info .company{ font-size:11px; opacity:.7 }
+
+/* === Main & Cards ======================================================== */
+.main{ grid-area:main; overflow:auto; padding-right:4px }
+
+.card{
+  background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+  border:1px solid var(--stroke);
+  border-radius: var(--radius-lg); margin-bottom:16px;
+  box-shadow: 0 10px 28px rgba(0,0,0,.28); overflow:hidden;
+}
+.card.hdr{ padding:14px 16px; border-bottom:1px solid var(--stroke); font-weight:600 }
+.card.body{ padding:16px }
+
+/* === KPIs ================================================================ */
+.kpis{ display:grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap:12px; margin-bottom:12px }
+.kpi{
+  position:relative; overflow:hidden;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02)),
+    radial-gradient(120% 120% at 110% -10%, rgba(139,92,246,.18), transparent 40%),
+    radial-gradient(120% 120% at -10% 110%, rgba(37,99,235,.18), transparent 40%);
+}
+.kpi::before{
+  content:""; position:absolute; inset:0;
+  border-left:4px solid transparent;
+  border-image: linear-gradient(180deg, var(--brand-1), var(--brand-2)) 1;
+  opacity:.9; pointer-events:none;
+}
+.kpi .kpi-label{ color:var(--muted); font-size:13px }
+.kpi .kpi-value{ font-size:32px; font-weight:700; letter-spacing:.3px; margin-top:6px }
+
+/* === Forms =============================================================== */
+input, select{
+  width:100%; color:var(--text);
+  background: rgba(255,255,255,.04);
+  border:1px solid #334155; border-radius: var(--radius-sm);
+  padding:9px 10px; outline:none;
+}
+input::placeholder{ color:#94a3b8 }
+input:focus, select:focus{ border-color: var(--ring); box-shadow: 0 0 0 3px rgba(96,165,250,.25) }
+
+/* === Tables ============================================================== */
+table{ width:100%; border-collapse:separate; border-spacing:0 }
+thead th{
+  text-align:left; font-weight:600; font-size:13px; color:#94a3b8;
+  padding:12px 14px; border-bottom:1px solid var(--stroke);
+  background: rgba(255,255,255,.03)
+}
+tbody td{ padding:12px 14px; border-bottom:1px solid #1f2937 }
+tbody tr:hover{ background: rgba(255,255,255,.03) }
+
+/* === Chips & Pills ======================================================= */
+.chip{ display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; font-size:12px; border:1px solid transparent }
+.chip.open{   background: rgba(239,68,68,.12);  border-color: rgba(239,68,68,.35);  color:#fecaca }
+.chip.review{ background: rgba(245,158,11,.12); border-color: rgba(245,158,11,.35); color:#fde68a }
+.chip.closed{ background: rgba(16,185,129,.12); border-color: rgba(16,185,129,.35); color:#bbf7d0 }
+
+.pill{ font-size:11px; padding:2px 8px; border-radius:999px; font-weight:600 }
+.pill.open{         background: rgba(239,68,68,.15);  color:#fecaca; border:1px solid rgba(239,68,68,.35) }
+.pill.under_review{ background: rgba(245,158,11,.15); color:#fde68a; border:1px solid rgba(245,158,11,.35) }
+.pill.closed{       background: rgba(16,185,129,.15); color:#bbf7d0; border:1px solid rgba(16,185,129,.35) }
+
+/* === Dropdowns =========================================================== */
+.dropdown-wrap{ position:relative; z-index:1 }
+.dropdown{
+  position:absolute; right:0; top: calc(100% + 8px);
+  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+  border:1px solid var(--stroke); border-radius:12px;
+  box-shadow: 0 20px 40px rgba(0,0,0,.35); backdrop-filter: blur(8px);
+  overflow:hidden; z-index: 10000 !important;
+  min-width:280px;
+}
+.dd-header{ padding:10px 12px; font-weight:600; border-bottom:1px solid var(--stroke) }
+.dd-item{ display:flex; gap:10px; align-items:flex-start; padding:10px 12px; border-bottom:1px solid rgba(255,255,255,.06) }
+.dd-item:last-child{ border-bottom:none }
+.dd-col{ display:flex; flex-direction:column }
+.dd-title{ font-weight:600 }
+.dd-sub{ font-size:12px; color:var(--muted) }
+.dd-empty{ padding:12px; color:#94a3b8 }
+.dd-link, .dd-item-btn{ width:100%; text-align:left; background:transparent; border:none; color:var(--text); padding:10px 12px; cursor:pointer }
+.dd-link:hover, .dd-item-btn:hover{ background: rgba(255,255,255,.06) }
+
+/* === Utilities =========================================================== */
+.toolbar{ display:flex; gap:8px; justify-content:flex-end; align-items:center; margin-bottom:10px }
+.btn-group{ display:flex; gap:6px }
+.btn.active{ border-color: var(--brand-1) }
+
+/* ======================= POLISHED LIGHT THEME =========================== */
+/* On utilise html[data-theme='light'] */
+html[data-theme='light']{
+  --bg:        #f6f8fb;
+  --bg-soft:   #f8fafc;
+  --card:      #ffffffcc;
+  --stroke:    #e5e7eb;
+  --ring:      #2563eb;
+  --text:      #0f172a;
+  --muted:     #64748b;
+  --brand-1:   #2563eb;
+  --brand-2:   #8b5cf6;
+  --success:   #059669;
+  --danger:    #dc2626;
+  --warn:      #d97706;
+
+  --shadow-s:  0 4px 10px rgba(2,6,23,.06), 0 1px 0 rgba(2,6,23,.02);
+  --shadow-l:  0 12px 30px rgba(2,6,23,.12);
+}
+
+html[data-theme='light'] body{
+  color: var(--text);
+  background:
+    radial-gradient(1200px 600px at -10% -10%, #e9eeff 0%, rgba(255,255,255,0) 60%),
+    radial-gradient(900px 500px  at 110% 10%,  #efe9ff 0%, rgba(255,255,255,0) 55%),
+    linear-gradient(180deg, #f6f8fb 0%, #f6f8fb 100%);
+}
+
+/* Containers */
+html[data-theme='light'] .sidebar,
+html[data-theme='light'] .topbar,
+html[data-theme='light'] .card{
+  background: linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,255,255,.80));
+  border: 1px solid var(--stroke);
+  box-shadow: var(--shadow-s);
+  backdrop-filter: blur(6px);
+}
+html[data-theme='light'] .card{ box-shadow: var(--shadow-l) }
+html[data-theme='light'] .card.hdr{ border-bottom:1px solid var(--stroke) }
+
+/* KPI tiles */
+html[data-theme='light'] .kpi{
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.95), rgba(255,255,255,.82)),
+    radial-gradient(120% 120% at 110% -10%, rgba(139,92,246,.10), transparent 40%),
+    radial-gradient(120% 120% at -10% 110%, rgba(37,99,235,.10), transparent 40%);
+}
+
+/* Sidebar links */
+html[data-theme='light'] .navlink{ border-color: transparent; color: var(--text) }
+html[data-theme='light'] .navlink:hover{ background:#f1f5f9; border-color:#e5e7eb }
+html[data-theme='light'] .navlink.active{
+  position:relative;
+  background: linear-gradient(90deg, rgba(37,99,235,.12), rgba(139,92,246,.12));
+  border-color:#d1d5db;
+  box-shadow: 0 10px 20px rgba(37,99,235,.16);
+}
+html[data-theme='light'] .navlink.active::before{
+  content:""; position:absolute; left:6px; top:8px; bottom:8px; width:4px; border-radius:999px;
+  background: linear-gradient(180deg, var(--brand-1), var(--brand-2));
+}
+
+/* Search + inputs + buttons */
+html[data-theme='light'] .search{ background:#fff; border-color:#e5e7eb; box-shadow: inset 0 1px 0 rgba(2,6,23,.02) }
+html[data-theme='light'] input,
+html[data-theme='light'] select{ background:#fff; border-color:#e5e7eb; color:var(--text) }
+html[data-theme='light'] input::placeholder{ color:#94a3b8 }
+html[data-theme='light'] .btn,
+html[data-theme='light'] .icon-btn{ background:#fff; border-color:#e5e7eb; color:var(--text) }
+html[data-theme='light'] .btn--brand{
+  background: linear-gradient(90deg, var(--brand-1), var(--brand-2));
+  border-color: transparent; color:#fff !important;
+  box-shadow: 0 10px 22px rgba(37,99,235,.18);
+}
+input[type="checkbox"]{ accent-color: var(--brand-1) }
+
+/* Tables */
+html[data-theme='light'] thead th{
+  background:#f8fafc; border-bottom:1px solid #e5e7eb; color:#475569;
+}
+html[data-theme='light'] tbody td{ border-bottom:1px solid #eef2f7 }
+html[data-theme='light'] tbody tr:hover{ background:#f8fafc }
+
+/* Chips & badge */
+html[data-theme='light'] .chip.open   { background:#fee2e2;  border-color:#fecaca; color:#7f1d1d }
+html[data-theme='light'] .chip.review { background:#fef3c7;  border-color:#fde68a; color:#78350f }
+html[data-theme='light'] .chip.closed { background:#dcfce7;  border-color:#bbf7d0; color:#064e3b }
+html[data-theme='light'] .badge{ background:#fee2e2; color:#991b1b; border:1px solid #fecaca }
+
+/* Scrollbar (light & dark) */
+*{ scrollbar-width: thin; scrollbar-color: #475569 transparent }
+html[data-theme='light'] *{ scrollbar-color: #cbd5e1 transparent }
+::-webkit-scrollbar{ height:10px; width:10px }
+::-webkit-scrollbar-thumb{
+  background:#475569; border-radius:999px; border:2px solid transparent; background-clip: padding-box;
+}
+html[data-theme='light'] ::-webkit-scrollbar-thumb{ background:#cbd5e1 }
+::-webkit-scrollbar-thumb:hover{ background:#94a3b8 }
+/* ===== TOPBAR OVERRIDES — COLLER À LA FIN DU FICHIER =================== */
+:root{ --tb-h:42px }  /* hauteur unifiée des contrôles de la topbar */
+
+/* Layout : gauche (scope) | centre (search centré absolu) | droite (actions) */
+.topbar{
+  position: relative;           /* contexte pour dropdowns + centrage absolu */
+  z-index: 1200;                /* passe au-dessus des cartes en dessous     */
+  display: flex !important;     /* force flex (écrase grid/anciennes règles) */
+  align-items: center;
+  gap: 12px;
+  padding: 0 14px;
+}
+
+/* blocs gauche/droite */
+.tb-left{  display:flex; align-items:center; gap:8px }
+.tb-right{ margin-left:auto; display:flex; align-items:center; gap:8px }
+
+/* bloc centre: VRAI centrage visuel, quelle que soit la largeur des côtés */
+.tb-center{
+  position: absolute; left:50%; transform: translateX(-50%);
+  display:flex; align-items:center; justify-content:center;
+  width: min(720px, calc(100% - 360px)); /* évite chevauchement côtés */
+  pointer-events: auto;
+}
+
+/* ne pas laisser la search étirer le layout */
+.topbar .search{ flex: 0 0 auto !important; }
+
+/* style/hauteur unifiée des éléments */
+.topbar .select,
+.topbar .search,
+.topbar .icon-btn,
+.topbar .pg-chip,
+.topbar .avatar-btn{
+  height: var(--tb-h);
+  display: inline-flex;
+  align-items: center;
+}
+
+/* champ search parfaitement centré et arrondi */
+.tb-center .search{
+  width:100%;
+  border-radius: 999px;
+  padding: 0 12px;              /* 0 vertical pour centrage parfait */
+}
+.topbar .search input{
+  height:100%; padding:0; margin:0;
+}
+
+/* boutons icône carrés */
+.topbar .icon-btn{ width: var(--tb-h); padding:0; line-height:1 }
+
+/* select/pg-chip padding horizontal seulement */
+.topbar .select{ padding: 0 10px }
+.topbar .pg-chip{ padding: 0 10px; border-radius:999px }
+
+/* avatar badge */
+.topbar .avatar-btn{ padding: 0 10px; border-radius:12px }
+.topbar .avatar{
+  width:22px; height:22px; border-radius:999px;
+  display:inline-flex; align-items:center; justify-content:center; font-weight:700;
+  background:#1f2937;
+}
+
+/* dropdown au-dessus de tout et décollé de la barre */
+.dropdown-wrap{ position: relative }
+.dropdown{ z-index: 5000 !important; top: calc(100% + 8px) }
+/* ===== TOPBAR — FIX FINAL (coller à la FIN du fichier) ================== */
+/* largeur réservée pour chaque côté (gauche/droite) pour centrer la search */
+:root{ --tb-h:42px; --tb-side:260px }
+
+/* barre en flex, z-index élevé pour passer au-dessus des cartes */
+.topbar{
+  position:relative;
+  z-index:1200;
+  display:flex !important;
+  align-items:center;
+  gap:12px;
+  padding:0 14px;
+}
+
+/* groupes gauche / droite */
+.tb-left{ display:flex; align-items:center; gap:8px; flex:0 0 auto }
+.tb-right{ display:flex; align-items:center; gap:8px; flex:0 0 auto; margin-left:auto }
+
+/* centre ABSOLU : reste VRAIMENT centré quelle que soit la largeur des côtés */
+.tb-center{
+  position:absolute; left:50%; transform:translateX(-50%);
+  display:flex; align-items:center; justify-content:center;
+  width: calc(100% - (var(--tb-side) * 2));
+  max-width:720px;
+  pointer-events:auto;
+}
+
+/* unifie la hauteur et l’alignement vertical des contrôles */
+.topbar .select,
+.topbar .search,
+.topbar .icon-btn,
+.topbar .pg-chip,
+.topbar .avatar-btn{
+  height: var(--tb-h);
+  display:inline-flex;
+  align-items:center;
+}
+
+/* boutons icônes carrés */
+.topbar .icon-btn{ width:var(--tb-h); padding:0; line-height:1 }
+
+/* scope & chip: padding horizontal seulement */
+.topbar .select{ padding:0 10px }
+.topbar .pg-chip{ padding:0 10px; border-radius:999px }
+
+/* search parfaitement centrée */
+.tb-center .search{
+  width:100%;
+  border-radius:999px;
+  padding:0 12px;                 /* 0 vertical -> centrage nickel */
+}
+.topbar .search{ flex:0 0 auto !important } /* évite d’étirer la barre */
+.topbar .search input{ height:100%; padding:0; margin:0 }
+
+/* avatar badge */
+.topbar .avatar-btn{ padding:0 10px; border-radius:12px }
+.topbar .avatar{
+  width:22px; height:22px; border-radius:999px;
+  display:inline-flex; align-items:center; justify-content:center; font-weight:700;
+  background:#1f2937;
+}
+
+/* dropdowns au-dessus de tout et espacés de la barre */
+.dropdown-wrap{ position:relative }
+.dropdown{ z-index:5000 !important; top:calc(100% + 8px) }
+
+/* (optionnel) si ta search touche encore les côtés, augmente --tb-side (ex: 300px) */
+/* === TOPBAR — FIX UNIQUE (coller à la fin du fichier) =================== */
+:root{ --tb-h:42px; --tb-side:300px }  /* ajuste --tb-side si ça chevauche */
+
+.topbar{
+  position:relative;                /* contexte pour dropdowns + centrage */
+  z-index:10000;                    /* au-dessus des cartes/KPI            */
+  display:flex !important;          /* force flex (écrase grid & anciens)  */
+  align-items:center;
+  gap:12px;
+  padding:0 14px;
+}
+
+/* groupes gauche/droite */
+.tb-left{  display:flex; align-items:center; gap:8px; flex:0 0 auto }
+.tb-right{ display:flex; align-items:center; gap:8px; flex:0 0 auto; margin-left:auto }
+
+/* centre ABSOLU : toujours centré, peu importe la largeur des côtés */
+.tb-center{
+  position:absolute; left:50%; transform:translateX(-50%);
+  display:flex; align-items:center; justify-content:center;
+  width: calc(100% - (var(--tb-side) * 2));  /* réserve de chaque côté */
+  max-width:720px;
+  pointer-events:auto;
+}
+
+/* hauteur & alignement uniformes pour tous les contrôles */
+.topbar .select,
+.topbar .search,
+.topbar .icon-btn,
+.topbar .pg-chip,
+.topbar .avatar-btn{
+  height: var(--tb-h);
+  display:inline-flex;
+  align-items:center;
+  padding-block:0;
+}
+
+/* boutons icônes carrés */
+.topbar .icon-btn{ width:var(--tb-h); padding:0; line-height:1 }
+
+/* search parfaitement centrée */
+.tb-center .search{
+  width:100%;
+  border-radius:999px;
+  padding:0 12px;           /* 0 vertical = centrage visuel nickel */
+}
+.topbar .search{ flex:0 0 auto !important }  /* n’étire pas la barre */
+.topbar .search input{ height:100%; padding:0; margin:0 }
+
+/* padding horizontal sur select & chip */
+.topbar .select{ padding:0 10px }
+.topbar .pg-chip{ padding:0 10px; border-radius:999px }
+
+/* avatar badge */
+.topbar .avatar-btn{ padding:0 10px; border-radius:12px }
+.topbar .avatar{
+  width:22px; height:22px; border-radius:999px;
+  display:inline-flex; align-items:center; justify-content:center; font-weight:700;
+  background:#1f2937;
+}
+
+/* dropdowns au-dessus et décollés de la barre */
+.dropdown-wrap{ position:relative }
+.dropdown{ z-index:100000 !important; top:calc(100% + 8px) }
+/* === Topbar – version simple (scope + search à gauche, actions à droite) */
+:root{ --tb-h:42px }
+
+.topbar{
+  position: relative; z-index: 10000;  /* dropdowns au-dessus des cartes */
+  display: flex; align-items: center; gap: 12px; padding: 0 14px;
+}
+
+.tb-left{ display:flex; align-items:center; gap:8px; flex:1 }
+.tb-right{ display:flex; align-items:center; gap:8px }
+
+/* la search prend la largeur dispo à gauche */
+.tb-left .search{ flex:1; max-width: 720px }
+.topbar .search,
+.topbar .select,
+.topbar .icon-btn,
+.topbar .pg-chip,
+.topbar .avatar-btn{
+  height: var(--tb-h); display:inline-flex; align-items:center; padding-block:0;
+}
+.topbar .icon-btn{ width: var(--tb-h); padding:0; line-height:1 }
+.topbar .select{ padding:0 10px }
+.topbar .pg-chip{ padding:0 10px; border-radius:999px }
+.topbar .avatar-btn{ padding:0 10px; border-radius:12px }
+.topbar .search input{ height:100%; padding:0; margin:0 }
+
+/* dropdowns */
+.dropdown-wrap{ position:relative }
+.dropdown{ top: calc(100% + 8px); z-index: 20000 !important }
