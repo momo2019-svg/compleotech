@@ -6,12 +6,13 @@ import { supabase } from "@/lib/supabase.js";
  * Props:
  * - centerId: string (UUID client)
  * - initialFilters: { depth: number, min_amount: number }
+ * - onPickCenter?: (id: string) => void   // callback quand on clique une PERSON/BUSINESS
  *
  * Attendu côté RPC get_graph_ui:
  *   nodes: [{ id, label?, type? ('PERSON'|'BUSINESS'|'ACCOUNT'|...), risk? }]
  *   links: [{ source, target, amount?, count?, channel? ('CARD'|'WIRE'|'CRYPTO'|'CASH'|'ACH') }]
  */
-export default function GraphCanvas({ centerId, initialFilters }) {
+export default function GraphCanvas({ centerId, initialFilters, onPickCenter }) {
   /* ------------ state ------------- */
   const [minAmount, setMinAmount] = useState(initialFilters?.min_amount ?? 0);
   const [depth, setDepth] = useState(initialFilters?.depth ?? 1);
@@ -53,7 +54,7 @@ export default function GraphCanvas({ centerId, initialFilters }) {
         target: String(l.target),
         amount: Number(l.amount ?? 0),
         count: Number(l.count ?? 1),
-        channel: (l.channel || "").toUpperCase(), // CARD/WIRE/CRYPTO/CASH/ACH/…
+        channel: (l.channel || "").toUpperCase(),
       }));
 
       setNodes(nn);
@@ -80,19 +81,13 @@ export default function GraphCanvas({ centerId, initialFilters }) {
       return { pos: new Map(), bbox: { minX: 0, minY: 0, maxX: 0, maxY: 0 } };
 
     const center =
-      nodes.find((n) => n.id === String(centerId)) ??
-      nodes[0];
+      nodes.find((n) => n.id === String(centerId)) ?? nodes[0];
 
     const others = nodes.filter((n) => n.id !== center.id);
     const pos = new Map();
 
-    const cx = 0,
-      cy = 0;
-    pos.set(center.id, {
-      x: cx,
-      y: cy,
-      r: center.type === "ACCOUNT" ? 16 : 18,
-    });
+    const cx = 0, cy = 0;
+    pos.set(center.id, { x: cx, y: cy, r: center.type === "ACCOUNT" ? 16 : 18 });
 
     const R = Math.max(160, Math.min(420, 110 + others.length * 20));
     const step = (2 * Math.PI) / Math.max(1, others.length);
@@ -103,10 +98,7 @@ export default function GraphCanvas({ centerId, initialFilters }) {
       pos.set(n.id, { x, y, r: n.type === "ACCOUNT" ? 16 : 18 });
     });
 
-    let minX = 0,
-      minY = 0,
-      maxX = 0,
-      maxY = 0;
+    let minX = 0, minY = 0, maxX = 0, maxY = 0;
     pos.forEach((p) => {
       minX = Math.min(minX, p.x - 48);
       maxX = Math.max(maxX, p.x + 48);
@@ -145,33 +137,26 @@ export default function GraphCanvas({ centerId, initialFilters }) {
     switch (n.type) {
       case "ACCOUNT":
       case "WALLET":
-        return "#60a5fa"; // bleu (carte/compte)
+        return "#60a5fa";
       case "BUSINESS":
-        return "#34d399"; // vert
+        return "#34d399";
       case "PERSON":
       default:
-        return "#14b8a6"; // teal
+        return "#14b8a6";
     }
   };
 
   const EDGE_CLR = (ch) => {
     switch (ch) {
-      case "CARD":
-        return "rgba(124,58,237,0.7)"; // violet
-      case "WIRE":
-        return "rgba(249,115,22,0.7)"; // orange
-      case "CRYPTO":
-        return "rgba(34,211,238,0.75)"; // cyan
-      case "CASH":
-        return "rgba(107,114,128,0.7)"; // gris
-      case "ACH":
-        return "rgba(34,197,94,0.7)"; // vert
-      default:
-        return "rgba(99,102,241,0.6)"; // indigo
+      case "CARD": return "rgba(124,58,237,0.7)";
+      case "WIRE": return "rgba(249,115,22,0.7)";
+      case "CRYPTO": return "rgba(34,211,238,0.75)";
+      case "CASH": return "rgba(107,114,128,0.7)";
+      case "ACH": return "rgba(34,197,94,0.7)";
+      default: return "rgba(99,102,241,0.6)";
     }
   };
 
-  // pictogrammes simples (personne / carte) en vectoriel
   function drawGlyph(ctx, type, x, y, r) {
     ctx.save();
     ctx.translate(x, y);
@@ -180,34 +165,26 @@ export default function GraphCanvas({ centerId, initialFilters }) {
     ctx.lineWidth = 1;
 
     if (type === "ACCOUNT" || type === "WALLET") {
-      // petite carte
-      const w = r * 1.5,
-        h = r * 1.0;
+      const w = r * 1.5, h = r * 1.0;
       ctx.beginPath();
-      ctx.roundRect(-w / 2, -h / 2, w, h, 3);
-      ctx.fill();
-      ctx.stroke();
-      // bande
+      // polyfill roundRect if older Chrome? Most are fine; else fallback:
+      if (ctx.roundRect) ctx.roundRect(-w / 2, -h / 2, w, h, 3);
+      else {
+        ctx.rect(-w / 2, -h / 2, w, h);
+      }
+      ctx.fill(); ctx.stroke();
       ctx.fillStyle = "#cbd5e1";
       ctx.fillRect(-w / 2 + 3, -h / 2 + 4, w - 6, 6);
     } else {
-      // silhouette
-      // tête
-      ctx.beginPath();
-      ctx.arc(0, -r * 0.25, r * 0.45, 0, Math.PI * 2);
-      ctx.fill();
-      // buste
-      ctx.beginPath();
-      ctx.arc(0, r * 0.6, r * 0.9, Math.PI, 0);
-      ctx.closePath();
-      ctx.fill();
+      ctx.beginPath(); ctx.arc(0, -r * 0.25, r * 0.45, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(0, r * 0.6, r * 0.9, Math.PI, 0); ctx.closePath(); ctx.fill();
     }
     ctx.restore();
   }
 
-  /* ------------ groupage de liens (multi-arcs) ------------- */
+  /* ------------ groupage de liens ------------- */
   const groupedLinks = useMemo(() => {
-    const groups = new Map(); // key: "src->dst" ; val: array of links
+    const groups = new Map();
     for (const l of links) {
       const k = `${l.source}->${l.target}`;
       if (!groups.has(k)) groups.set(k, []);
@@ -229,40 +206,33 @@ export default function GraphCanvas({ centerId, initialFilters }) {
     const ctx = cvs.getContext("2d");
     ctx.clearRect(0, 0, cvs.width, cvs.height);
 
-    // fond blanc (comme la démo)
+    // fond blanc
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, cvs.width, cvs.height);
 
     const toX = (x) => x * zoom + offset.x;
     const toY = (y) => y * zoom + offset.y;
 
-    // liens groupés
+    // liens
     groupedLinks.forEach((arr) => {
-      // dessiner chaque lien du groupe avec un décalage sur la normale
       const l0 = arr[0];
       const a = layout.pos.get(l0.source);
       const b = layout.pos.get(l0.target);
       if (!a || !b) return;
 
-      const x1 = toX(a.x),
-        y1 = toY(a.y);
-      const x2 = toX(b.x),
-        y2 = toY(b.y);
+      const x1 = toX(a.x), y1 = toY(a.y);
+      const x2 = toX(b.x), y2 = toY(b.y);
 
-      const mx = (x1 + x2) / 2;
-      const my = (y1 + y2) / 2;
-      const dx = x2 - x1,
-        dy = y2 - y1;
+      const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+      const dx = x2 - x1, dy = y2 - y1;
       const len = Math.hypot(dx, dy) || 1;
-      const nx = (-dy / len) * 60; // normale (taille base)
-      const ny = (dx / len) * 60;
+      const nx = (-dy / len) * 60, ny = (dx / len) * 60;
 
-      const sep = 0.35; // espacement relatif
+      const sep = 0.35;
       const k = arr.length;
       arr.forEach((l, i) => {
-        const t = (i - (k - 1) / 2) * sep; // offset relatif
-        const cx1 = mx + nx * t;
-        const cy1 = my + ny * t;
+        const t = (i - (k - 1) / 2) * sep;
+        const cx1 = mx + nx * t, cy1 = my + ny * t;
 
         ctx.lineWidth = Math.max(1, 1.5 * zoom);
         ctx.strokeStyle = EDGE_CLR(l.channel);
@@ -283,7 +253,7 @@ export default function GraphCanvas({ centerId, initialFilters }) {
         ctx.fillStyle = EDGE_CLR(l.channel);
         ctx.fill();
 
-        // label (petit tag du montant)
+        // label montant / channel
         const tag = l.amount ? `$${Math.round(l.amount).toLocaleString()}` : (l.channel || `${l.count}x`);
         const lx = cx1, ly = cy1;
         ctx.font = `${Math.max(10, 11 * zoom)}px ui-sans-serif,system-ui`;
@@ -300,34 +270,20 @@ export default function GraphCanvas({ centerId, initialFilters }) {
     nodes.forEach((n) => {
       const p = layout.pos.get(n.id);
       if (!p) return;
-      const x = toX(p.x),
-        y = toY(p.y);
+      const x = toX(p.x), y = toY(p.y);
       const r = p.r * zoom;
 
-      // halo focus
       if (focusId === n.id) {
-        ctx.beginPath();
-        ctx.arc(x, y, r + 9, 0, Math.PI * 2);
-        ctx.strokeStyle = "rgba(59,130,246,0.55)";
-        ctx.lineWidth = 4;
-        ctx.stroke();
+        ctx.beginPath(); ctx.arc(x, y, r + 9, 0, Math.PI * 2);
+        ctx.strokeStyle = "rgba(59,130,246,0.55)"; ctx.lineWidth = 4; ctx.stroke();
       }
 
-      // disque
-      ctx.beginPath();
-      ctx.fillStyle = NODE_FILL(n);
-      ctx.arc(x, y, r, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.beginPath(); ctx.fillStyle = NODE_FILL(n);
+      ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = "rgba(0,0,0,0.15)"; ctx.lineWidth = 1; ctx.stroke();
 
-      // bord
-      ctx.strokeStyle = "rgba(0,0,0,0.15)";
-      ctx.lineWidth = 1;
-      ctx.stroke();
-
-      // pictogramme
       drawGlyph(ctx, n.type, x, y, r * 0.75);
 
-      // label sous le nœud
       const label =
         n.id.startsWith("tx:") || n.type === "ACCOUNT"
           ? (n.label?.slice(0, 12) || n.id.slice(0, 12)) + "…"
@@ -338,11 +294,9 @@ export default function GraphCanvas({ centerId, initialFilters }) {
       ctx.fillText(label, x - tw / 2, y + r + 14);
     });
 
-    // tooltip
     if (hover) {
       const pad = 6;
-      const tx = hover.x + 10,
-        ty = hover.y - 10;
+      const tx = hover.x + 10, ty = hover.y - 10;
       ctx.font = "12px ui-sans-serif,system-ui";
       const w = ctx.measureText(hover.text).width + pad * 2;
       const h = 22;
@@ -358,28 +312,20 @@ export default function GraphCanvas({ centerId, initialFilters }) {
     const cvs = canvasRef.current;
     if (!cvs) return;
     let dragging = false;
-    let sx = 0,
-      sy = 0;
+    let sx = 0, sy = 0;
     let start = { ...offset };
 
     const mdown = (e) => {
       dragging = true;
-      sx = e.clientX;
-      sy = e.clientY;
+      sx = e.clientX; sy = e.clientY;
       start = { ...offset };
       cvs.style.cursor = "grabbing";
     };
     const mmove = (e) => {
       if (!dragging) return;
-      setOffset({
-        x: start.x + (e.clientX - sx),
-        y: start.y + (e.clientY - sy),
-      });
+      setOffset({ x: start.x + (e.clientX - sx), y: start.y + (e.clientY - sy) });
     };
-    const mup = () => {
-      dragging = false;
-      cvs.style.cursor = "grab";
-    };
+    const mup = () => { dragging = false; cvs.style.cursor = "grab"; };
 
     cvs.addEventListener("mousedown", mdown);
     window.addEventListener("mousemove", mmove);
@@ -409,40 +355,32 @@ export default function GraphCanvas({ centerId, initialFilters }) {
       for (const n of nodes) {
         const p = layout.pos.get(n.id);
         if (!p) continue;
-        const x = toX(p.x),
-          y = toY(p.y);
+        const x = toX(p.x), y = toY(p.y);
         const r = p.r * zoom + 4;
         if ((mx - x) ** 2 + (my - y) ** 2 <= r ** 2) {
-          lastHit = { type: "node", id: n.id, x: mx, y: my, text: n.label || n.id };
+          lastHit = { type: "node", id: n.id, node: n, x: mx, y: my, text: n.label || n.id };
           setHover({ x: mx, y: my, text: n.label || n.id });
           return;
         }
       }
 
-      // edges (milieu)
+      // edges (milieu approx)
       for (const [key, arr] of groupedLinks.entries()) {
         const l0 = arr[0];
         const a = layout.pos.get(l0.source);
         const b = layout.pos.get(l0.target);
         if (!a || !b) continue;
-
-        const x1 = toX(a.x),
-          y1 = toY(a.y);
-        const x2 = toX(b.x),
-          y2 = toY(b.y);
-        const mx2 = (x1 + x2) / 2,
-          my2 = (y1 + y2) / 2;
+        const x1 = toX(a.x), y1 = toY(a.y);
+        const x2 = toX(b.x), y2 = toY(b.y);
+        const mx2 = (x1 + x2) / 2, my2 = (y1 + y2) / 2;
         const dist = Math.hypot(mx - mx2, my - my2);
         if (dist < 14) {
-          // assemble un résumé (par channel)
           const byCh = arr.reduce((acc, l) => {
             const k = l.channel || "OTHER";
             acc[k] = (acc[k] || 0) + (l.amount || 0);
             return acc;
           }, {});
-          const parts = Object.entries(byCh)
-            .map(([c, s]) => `${c}:${Math.round(s)}`)
-            .join("  ");
+          const parts = Object.entries(byCh).map(([c, s]) => `${c}:${Math.round(s)}`).join("  ");
           lastHit = { type: "edge", id: key, x: mx, y: my, text: parts || "edge" };
           setHover({ x: mx, y: my, text: parts || "edge" });
           return;
@@ -453,12 +391,17 @@ export default function GraphCanvas({ centerId, initialFilters }) {
       setHover(null);
     }
 
-    function onLeave() {
-      setHover(null);
-    }
+    function onLeave() { setHover(null); }
 
     function onClick() {
-      if (lastHit?.type === "node") setFocusId(lastHit.id);
+      if (lastHit?.type === "node") {
+        setFocusId(lastHit.id);
+        // Recentrage uniquement si ce n’est pas un compte/transaction
+        const t = lastHit.node?.type || "";
+        if (onPickCenter && t !== "ACCOUNT" && !String(lastHit.id).startsWith("tx:")) {
+          onPickCenter(String(lastHit.id));
+        }
+      }
     }
 
     cvs.addEventListener("mousemove", onMove);
@@ -469,18 +412,12 @@ export default function GraphCanvas({ centerId, initialFilters }) {
       cvs.removeEventListener("mouseleave", onLeave);
       cvs.removeEventListener("click", onClick);
     };
-  }, [nodes, groupedLinks, layout, zoom, offset]);
+  }, [nodes, groupedLinks, layout, zoom, offset, onPickCenter]);
 
   /* ------------ controls ------------- */
-  function zoomIn() {
-    setZoom((z) => Math.min(2.6, z * 1.2));
-  }
-  function zoomOut() {
-    setZoom((z) => Math.max(0.22, z / 1.2));
-  }
-  function reset() {
-    fitView();
-  }
+  function zoomIn() { setZoom((z) => Math.min(2.6, z * 1.2)); }
+  function zoomOut() { setZoom((z) => Math.max(0.22, z / 1.2)); }
+  function reset() { fitView(); }
   function exportPNG() {
     const link = document.createElement("a");
     link.download = "graph.png";
