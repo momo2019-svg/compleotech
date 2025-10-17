@@ -13,13 +13,14 @@ import Imports from "./pages/Imports.jsx";
 import Exports from "./pages/Exports.jsx";
 import Hubs from "./pages/Hubs.jsx";
 import Anomalies from "./pages/Anomalies.jsx";
-import Auth from "./Auth.jsx";
 import Graph from "./pages/Graph.jsx";
 
-// ✅ Page IA
+// IA
 import AIWorkspace from "./pages/AIWorkspace.jsx";
 
-import Auth from "./Auth.jsx";
+// ⚠️ on évite tout conflit en important sous un autre nom
+import AuthPage from "./Auth.jsx";
+
 import { ProfileProvider, RequireRole, useProfile } from "./lib/profile.jsx";
 
 function AppGate({ children }) {
@@ -41,11 +42,11 @@ export default function App() {
               <Route path="/alerts" element={<Alerts />} />
               <Route path="/alerts/:id" element={<AlertsDetails />} />
 
-              {/* CRUD */}
+              {/* CRUD accessibles à tous les rôles connectés */}
               <Route path="/clients" element={<Clients />} />
               <Route path="/transactions" element={<Transactions />} />
 
-              {/* Reporting */}
+              {/* Reporting : admin ET analyst */}
               <Route
                 path="/reports"
                 element={
@@ -97,7 +98,7 @@ export default function App() {
                 }
               />
 
-              {/* ✅ IA */}
+              {/* IA */}
               <Route
                 path="/ai"
                 element={
@@ -108,7 +109,7 @@ export default function App() {
               />
 
               {/* Auth */}
-              <Route path="/auth" element={<Auth />} />
+              <Route path="/auth" element={<AuthPage />} />
 
               {/* 404 */}
               <Route path="*" element={<div style={{ padding: 16 }}>404</div>} />
