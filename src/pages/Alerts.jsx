@@ -1,5 +1,5 @@
 // src/pages/Alerts.jsx
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/lib/supabase.js";
 
@@ -17,75 +17,122 @@ export default function Alerts() {
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [search, setSearch] = useState("");
 
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      // Préférence : vue "v_alert_features" (avec alert_id / customer), sinon fallback table "alerts"
+      let q = supabase
+        .from("v_alert_features")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (statusFilter !== "ALL") q = q.eq("status", statusFilter);
+
+      const { data, error } = await q;
+
+      if (error) {
+        // Fallback table
+        let q2 = supabase
+          .from("alerts")
+          .select("id,customer_id,score,message,transaction_id,status,created_at")
+          .order("created_at", { ascending: false });
+        if (statusFilter !== "ALL") q2 = q2.eq("status", statusFilter);
+
+        const { data: d2, error: e2 } = await q2;
+        if (e2) {
+          console.error("alerts load error:", e2);
+          setRows([]);
+        } else {
+          setRows(
+            (d2 ?? []).map((r) => ({
+              id: r.id,
+              customer: { name: r.customer_id || "-" },
+              score: r.score,
+              message: r.message,
+              transaction_id: r.transaction_id ?? null,
+              status: r.status,
+              created_at: r.created_at,
+            }))
+          );
+        }
+      } else {
+        setRows(
+          (data ?? []).map((r) => ({
+            id: r.alert_id ?? r.id,
+            customer: { name: r.customer ?? "-" },
+            score: r.score,
+            message: r.message,
+            transaction_id: r.transaction_id ?? null,
+            status: r.status,
+            created_at: r.created_at,
+          }))
+        );
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [statusFilter]);
+
   useEffect(() => {
     load();
-    // On écoute les changements sur alerts ET alert_transactions pour rafraîchir la vue
+    // Rafraîchissement live sur alerts + alert_transactions
     const ch = supabase
       .channel("alerts-live")
       .on("postgres_changes", { event: "*", schema: "public", table: "alerts" }, load)
       .on("postgres_changes", { event: "*", schema: "public", table: "alert_transactions" }, load)
       .subscribe();
     return () => supabase.removeChannel(ch);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [load]);
 
-  async function load() {
-    setLoading(true);
-    let q = supabase
-      .from("v_alert_features")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    if (statusFilter !== "ALL") q = q.eq("status", statusFilter);
-
-    const { data, error } = await q;
-    if (error) {
-      console.error("alerts load error:", error);
-      setRows([]);
-    } else {
-      // Normalisation pour coller au rendu existant
-      const rows = (data ?? []).map(r => ({
-        id: r.alert_id ?? r.id,             // la vue expose alert_id
-        customer: { name: r.customer ?? "-" },
-        score: r.score,
-        message: r.message,
-        transaction_id: r.transaction_id ?? null,
-        status: r.status,
-        created_at: r.created_at
-      }));
-      setRows(rows);
-    }
-    setLoading(false);
-  }
-
+  // Avancement de statut via RPC (audit) avec fallback update direct
   async function advanceStatus(a) {
     const next = { OPEN: "UNDER_REVIEW", UNDER_REVIEW: "CLOSED", CLOSED: "CLOSED" };
     const to = next[a.status] || a.status;
-    const { error } = await supabase.from("alerts").update({ status: to }).eq("id", a.id);
-    if (!error) load();
+
+    const { error: rpcErr } = await supabase.rpc("set_alert_status", {
+      p_alert_id: a.id,
+      p_new_status: to,
+      p_note: null,
+      p_assignee: null,
+    });
+
+    if (rpcErr) {
+      const { error: updErr } = await supabase
+        .from("alerts")
+        .update({ status: to })
+        .eq("id", a.id);
+      if (updErr) {
+        alert("Échec mise à jour : " + updErr.message);
+        return;
+      }
+    }
+    load();
   }
 
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
+    if (!term) return rows;
     return rows.filter((r) => {
-      const matchSearch = term
-        ? (r.customer?.name || "").toLowerCase().includes(term) ||
-          (r.message || "").toLowerCase().includes(term)
-        : true;
-      return matchSearch;
+      const name = (r.customer?.name || "").toLowerCase();
+      const msg = (r.message || "").toLowerCase();
+      const tx = String(r.transaction_id || "").toLowerCase();
+      return name.includes(term) || msg.includes(term) || tx.includes(term);
     });
   }, [rows, search]);
 
   return (
-    <div>
+    <div className="page-wrap" style={{ display: "grid", gap: 16 }}>
       <div className="card">
-        <div className="card hdr" style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:8 }}>
+        <div
+          className="card hdr"
+          style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}
+        >
           <span>Alertes</span>
-          <div style={{ display:"flex", gap:8, alignItems:"center" }}>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <select
-              className="btn"
+              className="select"
               value={statusFilter}
-              onChange={(e) => { setStatusFilter(e.target.value); load(); }}
+              onChange={(e) => setStatusFilter(e.target.value)}
             >
               <option value="ALL">Tous statuts</option>
               <option value="OPEN">OPEN</option>
@@ -94,11 +141,11 @@ export default function Alerts() {
             </select>
 
             <input
-              className="search"
-              placeholder="Rechercher (client, message)…"
+              className="select"
+              placeholder="Rechercher (client, message, tx)…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              style={{ maxWidth: 320 }}
+              style={{ width: 280 }}
             />
 
             <button className="btn" onClick={load} disabled={loading}>
@@ -107,45 +154,43 @@ export default function Alerts() {
           </div>
         </div>
 
-        <div className="card body" style={{ padding: 0 }}>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <div className="card body table-wrap" style={{ padding: 0 }}>
+          <table>
             <thead>
-              <tr style={{ background: "#f9fafb", borderBottom: "1px solid #e5e7eb" }}>
-                <th style={th}>Client</th>
-                <th style={th}>Score</th>
-                <th style={th}>Message</th>
-                <th style={th}>Transaction</th>
-                <th style={th}>Statut</th>
-                <th style={th}>Créé le</th>
-                <th style={th}></th>
+              <tr>
+                <th>Client</th>
+                <th>Score</th>
+                <th>Message</th>
+                <th>Transaction</th>
+                <th>Statut</th>
+                <th>Créé le</th>
+                <th></th>
               </tr>
             </thead>
 
             <tbody>
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={7} style={{ padding: 14, textAlign: "center", color: "#6b7280" }}>
+                  <td colSpan={7} style={{ padding: 14, textAlign: "center", color: "#9ca3af" }}>
                     {loading ? "Chargement…" : "Aucune alerte"}
                   </td>
                 </tr>
               )}
 
               {filtered.map((a) => (
-                <tr key={a.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
-                  <td style={td}>{a.customer?.name || "-"}</td>
-                  <td style={td}>{a.score ?? "-"}</td>
-                  <td style={td}>{a.message || "-"}</td>
-                  <td style={td}>
-                    {a.transaction_id ? a.transaction_id : "-"}
-                  </td>
-                  <td style={td}><StatusChip status={a.status} /></td>
-                  <td style={td}>{new Date(a.created_at).toLocaleString()}</td>
-                  <td style={{ ...td, textAlign: "right", whiteSpace:"nowrap" }}>
+                <tr key={a.id}>
+                  <td>{a.customer?.name || "-"}</td>
+                  <td>{a.score ?? "-"}</td>
+                  <td>{a.message || "-"}</td>
+                  <td>{a.transaction_id ? a.transaction_id : "-"}</td>
+                  <td><StatusChip status={a.status} /></td>
+                  <td>{new Date(a.created_at).toLocaleString()}</td>
+                  <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
                     <Link to={`/alerts/${a.id}`} className="btn" style={{ marginRight: 8 }}>
                       Ouvrir
                     </Link>
                     {a.status !== "CLOSED" && (
-                      <button className="btn btn--brand" onClick={() => advanceStatus(a)}>
+                      <button className="btn primary" onClick={() => advanceStatus(a)}>
                         Avancer le statut
                       </button>
                     )}
@@ -160,6 +205,3 @@ export default function Alerts() {
     </div>
   );
 }
-
-const th = { textAlign: "left", padding: "10px 12px", fontWeight: 600, fontSize: 13, color: "#374151" };
-const td = { padding: "10px 12px", fontSize: 14 };

@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "checkJs": false,
+    "skipLibCheck": true
+  },
+  "include": [
+    "supabase/functions/**/*.ts",
+    "supabase/functions/edge-runtime.d.ts"
+  ]
+}

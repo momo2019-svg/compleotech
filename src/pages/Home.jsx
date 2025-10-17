@@ -1,18 +1,18 @@
 // src/pages/Home.jsx
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { supabase } from "../lib/supabase.js";
+import { supabase } from "@/lib/supabase.js";
 
 const RISK = ["LOW", "MEDIUM", "HIGH"];
 const CHANNELS = ["CARD", "CASH", "CRYPTO", "WIRE", "ACH"];
 
-// Petite pastille de statut (utilise les classes .chip .open .review .closed de index.css)
+// Pastille de statut (accès)
 function StatusChip({ status }) {
   const cls =
     status === "OPEN" ? "chip open" :
     status === "UNDER_REVIEW" ? "chip review" :
     "chip closed";
-  return <span className={cls}>{status}</span>;
+  return <span className={cls} aria-label={`Statut ${status}`} role="status">{status}</span>;
 }
 
 export default function Home() {
@@ -26,6 +26,7 @@ export default function Home() {
   const [cRisk, setCRisk] = useState("LOW");
   const [cPEP, setCPEP] = useState(false);
   const [cMsg, setCMsg] = useState("");
+  const [busyAddClient, setBusyAddClient] = useState(false);
 
   // Quick add transaction
   const [customers, setCustomers] = useState([]);
@@ -36,6 +37,7 @@ export default function Home() {
   const [tOrig, setTOrig] = useState("");
   const [tDest, setTDest] = useState("");
   const [tMsg, setTMsg] = useState("");
+  const [busyAddTxn, setBusyAddTxn] = useState(false);
 
   // Dernières alertes
   const [alerts, setAlerts] = useState([]);
@@ -63,22 +65,44 @@ export default function Home() {
   useEffect(() => {
     load();
     // realtime sur alerts pour rafraîchir la liste & KPI
-    const ch = supabase
+    const chA = supabase
       .channel("home-alerts")
       .on("postgres_changes", { event: "*", schema: "public", table: "alerts" }, load)
       .subscribe();
-    return () => supabase.removeChannel(ch);
+    return () => supabase.removeChannel(chA);
+  }, []);
+
+  // realtime aussi sur customers & transactions
+  useEffect(() => {
+    const chC = supabase
+      .channel("home-customers")
+      .on("postgres_changes", { event: "*", schema: "public", table: "customers" }, load)
+      .subscribe();
+    const chT = supabase
+      .channel("home-transactions")
+      .on("postgres_changes", { event: "*", schema: "public", table: "transactions" }, load)
+      .subscribe();
+    return () => {
+      supabase.removeChannel(chC);
+      supabase.removeChannel(chT);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function addClient() {
+    if (busyAddClient) return;
+    setBusyAddClient(true);
     setCMsg("");
-    if (!cName || !cEmail || !cCountry) {
-      return setCMsg("Nom, email et pays sont requis.");
+    const cc = (cCountry || "").trim().toUpperCase().slice(0, 2);
+    if (!cName || !cEmail || !cc) {
+      setCMsg("Nom, email et pays (ISO-2) sont requis.");
+      setBusyAddClient(false);
+      return;
     }
     const { error } = await supabase.from("customers").insert({
       name: cName.trim(),
       email: cEmail.trim(),
-      country: cCountry.trim().toUpperCase(),
+      country: cc,
       risk_level: cRisk,
       pep: !!cPEP,
     });
@@ -86,51 +110,57 @@ export default function Home() {
     else {
       setCMsg("✅ Client ajouté !");
       setCName(""); setCEmail(""); setCCountry(""); setCRisk("LOW"); setCPEP(false);
-      load();
+      await load();
     }
+    setBusyAddClient(false);
   }
 
   async function addTxn() {
+    if (busyAddTxn) return;
+    setBusyAddTxn(true);
     setTMsg("");
     if (!tCustomer || !tAmount || Number(tAmount) <= 0) {
-      return setTMsg("Client et montant > 0 requis.");
+      setTMsg("Client et montant > 0 requis.");
+      setBusyAddTxn(false);
+      return;
     }
     const row = {
       customer_id: tCustomer,
       amount: Number(tAmount),
       currency: tCurrency.toUpperCase(),
       channel: tChannel,
-      origin_country: tOrig ? tOrig.toUpperCase() : null,
-      destination_country: tDest ? tDest.toUpperCase() : null,
+      origin_country: tOrig ? tOrig.toUpperCase().slice(0, 2) : null,
+      destination_country: tDest ? tDest.toUpperCase().slice(0, 2) : null,
     };
     const { error } = await supabase.from("transactions").insert(row);
     if (error) setTMsg(error.message);
     else {
       setTMsg("✅ Transaction ajoutée !");
       setTAmount(""); setTOrig(""); setTDest("");
-      load();
+      await load();
     }
+    setBusyAddTxn(false);
   }
 
   return (
     <div>
-      {/* KPI */}
+      {/* KPI Ultra Glass */}
       <div className="kpis">
-        <div className="card kpi">
-          <div className="kpi-label">Clients</div>
-          <div className="kpi-value">{kpi.customers}</div>
+        <div className="kpi-card glass">
+          <div className="kpi-ico">👥</div>
+          <div><div className="kpi-label">Clients</div><div className="kpi-value">{kpi.customers}</div></div>
         </div>
-        <div className="card kpi">
-          <div className="kpi-label">Transactions</div>
-          <div className="kpi-value">{kpi.transactions}</div>
+        <div className="kpi-card glass">
+          <div className="kpi-ico">💳</div>
+          <div><div className="kpi-label">Transactions</div><div className="kpi-value">{kpi.transactions}</div></div>
         </div>
-        <div className="card kpi">
-          <div className="kpi-label">Alertes ouvertes</div>
-          <div className="kpi-value">{kpi.alertsOpen}</div>
+        <div className="kpi-card glass">
+          <div className="kpi-ico">🚨</div>
+          <div><div className="kpi-label">Alertes ouvertes</div><div className="kpi-value">{kpi.alertsOpen}</div></div>
         </div>
-        <div className="card kpi">
-          <div className="kpi-label">Actions rapides</div>
-          <div className="kpi-value">🚀</div>
+        <div className="kpi-card glass">
+          <div className="kpi-ico">⚡</div>
+          <div><div className="kpi-label">Actions rapides</div><div className="kpi-value">Ready</div></div>
         </div>
       </div>
 
@@ -154,8 +184,7 @@ export default function Home() {
               </label>
             </div>
             <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-              {/* ⬇️ bouton amélioré */}
-              <button className="btn btn--brand" onClick={addClient}>Ajouter</button>
+              <button className="btn btn--brand" onClick={addClient} disabled={busyAddClient}>Ajouter</button>
               <Link className="btn" to="/clients">Ouvrir Clients</Link>
             </div>
           </div>
@@ -186,8 +215,7 @@ export default function Home() {
               <input placeholder="Destination (US…)" value={tDest} onChange={e => setTDest(e.target.value)} maxLength={2} />
             </div>
             <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-              {/* ⬇️ bouton amélioré */}
-              <button className="btn btn--brand" onClick={addTxn}>Ajouter</button>
+              <button className="btn btn--brand" onClick={addTxn} disabled={busyAddTxn}>Ajouter</button>
               <Link className="btn" to="/transactions">Ouvrir Transactions</Link>
             </div>
           </div>
@@ -217,7 +245,6 @@ export default function Home() {
                     <td>{a.customer?.name || "-"}</td>
                     <td>{a.message || "-"}</td>
                     <td>{a.score ?? "-"}</td>
-                    {/* ⬇️ pastille jolie */}
                     <td><StatusChip status={a.status} /></td>
                     <td>{new Date(a.created_at).toLocaleString()}</td>
                   </tr>

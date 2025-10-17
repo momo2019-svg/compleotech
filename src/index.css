@@ -391,6 +391,7 @@ html[data-theme='light'] *{ scrollbar-color: #cbd5e1 transparent }
 }
 html[data-theme='light'] ::-webkit-scrollbar-thumb{ background:#cbd5e1 }
 ::-webkit-scrollbar-thumb:hover{ background:#94a3b8 }
+
 /* ===== TOPBAR OVERRIDES — COLLER À LA FIN DU FICHIER =================== */
 :root{ --tb-h:42px }  /* hauteur unifiée des contrôles de la topbar */
 
@@ -458,11 +459,9 @@ html[data-theme='light'] ::-webkit-scrollbar-thumb{ background:#cbd5e1 }
 /* dropdown au-dessus de tout et décollé de la barre */
 .dropdown-wrap{ position: relative }
 .dropdown{ z-index: 5000 !important; top: calc(100% + 8px) }
-/* ===== TOPBAR — FIX FINAL (coller à la FIN du fichier) ================== */
-/* largeur réservée pour chaque côté (gauche/droite) pour centrer la search */
-:root{ --tb-h:42px; --tb-side:260px }
 
-/* barre en flex, z-index élevé pour passer au-dessus des cartes */
+/* ===== TOPBAR — FIX FINAL ============================================== */
+:root{ --tb-h:42px; --tb-side:260px }
 .topbar{
   position:relative;
   z-index:1200;
@@ -471,12 +470,8 @@ html[data-theme='light'] ::-webkit-scrollbar-thumb{ background:#cbd5e1 }
   gap:12px;
   padding:0 14px;
 }
-
-/* groupes gauche / droite */
 .tb-left{ display:flex; align-items:center; gap:8px; flex:0 0 auto }
 .tb-right{ display:flex; align-items:center; gap:8px; flex:0 0 auto; margin-left:auto }
-
-/* centre ABSOLU : reste VRAIMENT centré quelle que soit la largeur des côtés */
 .tb-center{
   position:absolute; left:50%; transform:translateX(-50%);
   display:flex; align-items:center; justify-content:center;
@@ -484,8 +479,6 @@ html[data-theme='light'] ::-webkit-scrollbar-thumb{ background:#cbd5e1 }
   max-width:720px;
   pointer-events:auto;
 }
-
-/* unifie la hauteur et l’alignement vertical des contrôles */
 .topbar .select,
 .topbar .search,
 .topbar .icon-btn,
@@ -495,112 +488,35 @@ html[data-theme='light'] ::-webkit-scrollbar-thumb{ background:#cbd5e1 }
   display:inline-flex;
   align-items:center;
 }
-
-/* boutons icônes carrés */
 .topbar .icon-btn{ width:var(--tb-h); padding:0; line-height:1 }
-
-/* scope & chip: padding horizontal seulement */
 .topbar .select{ padding:0 10px }
 .topbar .pg-chip{ padding:0 10px; border-radius:999px }
-
-/* search parfaitement centrée */
 .tb-center .search{
   width:100%;
   border-radius:999px;
-  padding:0 12px;                 /* 0 vertical -> centrage nickel */
+  padding:0 12px;
 }
-.topbar .search{ flex:0 0 auto !important } /* évite d’étirer la barre */
+.topbar .search{ flex:0 0 auto !important }
 .topbar .search input{ height:100%; padding:0; margin:0 }
-
-/* avatar badge */
 .topbar .avatar-btn{ padding:0 10px; border-radius:12px }
 .topbar .avatar{
   width:22px; height:22px; border-radius:999px;
   display:inline-flex; align-items:center; justify-content:center; font-weight:700;
   background:#1f2937;
 }
-
-/* dropdowns au-dessus de tout et espacés de la barre */
 .dropdown-wrap{ position:relative }
 .dropdown{ z-index:5000 !important; top:calc(100% + 8px) }
 
-/* (optionnel) si ta search touche encore les côtés, augmente --tb-side (ex: 300px) */
-/* === TOPBAR — FIX UNIQUE (coller à la fin du fichier) =================== */
-:root{ --tb-h:42px; --tb-side:300px }  /* ajuste --tb-side si ça chevauche */
+/* (optionnel) pour grosses barres : augmenter --tb-side (ex: 300px) */
 
-.topbar{
-  position:relative;                /* contexte pour dropdowns + centrage */
-  z-index:10000;                    /* au-dessus des cartes/KPI            */
-  display:flex !important;          /* force flex (écrase grid & anciens)  */
-  align-items:center;
-  gap:12px;
-  padding:0 14px;
-}
-
-/* groupes gauche/droite */
-.tb-left{  display:flex; align-items:center; gap:8px; flex:0 0 auto }
-.tb-right{ display:flex; align-items:center; gap:8px; flex:0 0 auto; margin-left:auto }
-
-/* centre ABSOLU : toujours centré, peu importe la largeur des côtés */
-.tb-center{
-  position:absolute; left:50%; transform:translateX(-50%);
-  display:flex; align-items:center; justify-content:center;
-  width: calc(100% - (var(--tb-side) * 2));  /* réserve de chaque côté */
-  max-width:720px;
-  pointer-events:auto;
-}
-
-/* hauteur & alignement uniformes pour tous les contrôles */
-.topbar .select,
-.topbar .search,
-.topbar .icon-btn,
-.topbar .pg-chip,
-.topbar .avatar-btn{
-  height: var(--tb-h);
-  display:inline-flex;
-  align-items:center;
-  padding-block:0;
-}
-
-/* boutons icônes carrés */
-.topbar .icon-btn{ width:var(--tb-h); padding:0; line-height:1 }
-
-/* search parfaitement centrée */
-.tb-center .search{
-  width:100%;
-  border-radius:999px;
-  padding:0 12px;           /* 0 vertical = centrage visuel nickel */
-}
-.topbar .search{ flex:0 0 auto !important }  /* n’étire pas la barre */
-.topbar .search input{ height:100%; padding:0; margin:0 }
-
-/* padding horizontal sur select & chip */
-.topbar .select{ padding:0 10px }
-.topbar .pg-chip{ padding:0 10px; border-radius:999px }
-
-/* avatar badge */
-.topbar .avatar-btn{ padding:0 10px; border-radius:12px }
-.topbar .avatar{
-  width:22px; height:22px; border-radius:999px;
-  display:inline-flex; align-items:center; justify-content:center; font-weight:700;
-  background:#1f2937;
-}
-
-/* dropdowns au-dessus et décollés de la barre */
-.dropdown-wrap{ position:relative }
-.dropdown{ z-index:100000 !important; top:calc(100% + 8px) }
 /* === Topbar – version simple (scope + search à gauche, actions à droite) */
 :root{ --tb-h:42px }
-
 .topbar{
-  position: relative; z-index: 10000;  /* dropdowns au-dessus des cartes */
+  position: relative; z-index: 10000;
   display: flex; align-items: center; gap: 12px; padding: 0 14px;
 }
-
 .tb-left{ display:flex; align-items:center; gap:8px; flex:1 }
 .tb-right{ display:flex; align-items:center; gap:8px }
-
-/* la search prend la largeur dispo à gauche */
 .tb-left .search{ flex:1; max-width: 720px }
 .topbar .search,
 .topbar .select,
@@ -614,7 +530,30 @@ html[data-theme='light'] ::-webkit-scrollbar-thumb{ background:#cbd5e1 }
 .topbar .pg-chip{ padding:0 10px; border-radius:999px }
 .topbar .avatar-btn{ padding:0 10px; border-radius:12px }
 .topbar .search input{ height:100%; padding:0; margin:0 }
-
-/* dropdowns */
 .dropdown-wrap{ position:relative }
 .dropdown{ top: calc(100% + 8px); z-index: 20000 !important }
+
+/* === Sidebar — bloc Reporting (icônes + section) ======================= */
+/* Icône collée au libellé, badge poussé à droite */
+.navlink { justify-content: flex-start; gap: 8px; }
+.navlink .badge { margin-left: auto; }
+.navlink .nav-icon { width: 16px; height: 16px; opacity: .9; }
+
+/* Titre de section et séparateur (entre Dashboard et Reporting) */
+.section-title{
+  font-size: 11px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: #94a3b8;          /* discret en dark */
+  margin: 8px 12px 6px;
+}
+.sidebar-divider{
+  height: 1px;
+  background: #1f2937;     /* ligne fine en dark */
+  margin: 12px 0 6px;
+  border-radius: 999px;
+}
+
+/* Variantes light */
+html[data-theme='light'] .section-title{ color: #64748b; }
+html[data-theme='light'] .sidebar-divider{ background: #e5e7eb; }

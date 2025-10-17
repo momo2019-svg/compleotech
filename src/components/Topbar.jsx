@@ -3,35 +3,55 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   FiSearch, FiBell, FiLogIn, FiLogOut, FiSettings,
-  FiDatabase, FiMoon, FiSun, FiAlertCircle
+  FiDatabase, FiMoon, FiSun, FiAlertCircle, FiAperture
 } from "react-icons/fi";
-import { supabase } from "../lib/supabase.js";
+import { supabase } from "@/lib/supabase.js";
+import { useProfile, IfRole } from "@/lib/profile.jsx";
 
+/* Pastille statut (aligne les classes avec le CSS: .chip .open .review .closed) */
 const Pill = ({ status }) => {
   const base = { fontSize: 11, padding: "2px 8px", borderRadius: 999, fontWeight: 600, marginLeft: 6 };
-  if (status === "OPEN") return <span className="pill open" style={base}>OPEN</span>;
-  if (status === "UNDER_REVIEW") return <span className="pill under_review" style={base}>UNDER_REVIEW</span>;
-  return <span className="pill closed" style={base}>CLOSED</span>;
+  if (status === "OPEN") return <span className="chip open" style={base}>OPEN</span>;
+  if (status === "UNDER_REVIEW") return <span className="chip review" style={base}>UNDER_REVIEW</span>;
+  return <span className="chip closed" style={base}>CLOSED</span>;
 };
 
 export default function Topbar() {
   const nav = useNavigate();
+  const { user, role } = useProfile();
 
-  /* THEME */
-  const [theme, setTheme] = useState(() => (localStorage.getItem("theme") === "light" ? "light" : "dark"));
-  useEffect(() => {
-    if (theme === "light") document.documentElement.setAttribute("data-theme", "light");
-    else document.documentElement.removeAttribute("data-theme");
-    localStorage.setItem("theme", theme);
-  }, [theme]);
+  /* THEME (dark | light | ultra-glass — même clé que le Dashboard) */
+  const [theme, setTheme] = useState(() => {
+    const saved = localStorage.getItem("theme") || "dark";
+    // applique au DOM
+    applyTheme(saved);
+    return saved;
+  });
+
+  function applyTheme(t) {
+    const html = document.documentElement;
+    if (t === "light") {
+      html.setAttribute("data-theme", "light");
+    } else if (t === "ultra-glass") {
+      html.setAttribute("data-theme", "ultra-glass");
+    } else {
+      // dark par défaut: on retire l’attribut
+      html.removeAttribute("data-theme");
+    }
+  }
+
+  function setAndPersistTheme(t) {
+    setTheme(t);
+    localStorage.setItem("theme", t);
+    applyTheme(t);
+  }
 
   /* AUTH */
-  const [user, setUser] = useState(null);
   const [email, setEmail] = useState("");
   const [pwd, setPwd] = useState("");
   const [authErr, setAuthErr] = useState("");
 
-  /* UI */
+  /* UI dropdowns */
   const [showNotif, setShowNotif] = useState(false);
   const [showUser, setShowUser] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -40,15 +60,11 @@ export default function Topbar() {
   const [alerts, setAlerts] = useState([]);
   const [openCount, setOpenCount] = useState(0);
 
-  /* SCOPE + SEARCH */
+  /* SEARCH */
   const [scope, setScope] = useState("tx_event_id");
+  const [query, setQuery] = useState("");
 
   useEffect(() => {
-    (async () => {
-      const { data } = await supabase.auth.getUser();
-      setUser(data?.user ?? null);
-    })();
-
     const loadAlerts = async () => {
       const { data: al } = await supabase
         .from("alerts")
@@ -65,18 +81,15 @@ export default function Topbar() {
     };
     loadAlerts();
 
-    const authSub = supabase.auth.onAuthStateChange((_e, session) => setUser(session?.user ?? null));
     const ch = supabase
       .channel("topbar-alerts")
       .on("postgres_changes", { event: "*", schema: "public", table: "alerts" }, loadAlerts)
       .subscribe();
 
-    return () => {
-      authSub.data.subscription.unsubscribe();
-      supabase.removeChannel(ch);
-    };
+    return () => supabase.removeChannel(ch);
   }, []);
 
+  /* Auth actions */
   async function signIn() {
     setAuthErr("");
     if (!email || !pwd) return setAuthErr("Email et mot de passe requis.");
@@ -93,38 +106,59 @@ export default function Topbar() {
 
   const initial = (user?.email?.[0] || "D").toUpperCase();
 
+  /* petite navigation rapide via la barre de recherche */
+  function submitSearch(e) {
+    e?.preventDefault?.();
+    if (!query.trim()) return;
+    if (scope === "tx_event_id") {
+      // ouvre Transactions avec filtre (query param simple pour le moment)
+      nav(`/transactions?search=${encodeURIComponent(query.trim())}`);
+    } else if (scope === "customers_name") {
+      nav(`/clients?search=${encodeURIComponent(query.trim())}`);
+    } else {
+      nav(`/alerts?search=${encodeURIComponent(query.trim())}`);
+    }
+    setQuery("");
+  }
+
   return (
     <div className="topbar">
-      {/* GAUCHE = scope + search (search prend la place) */}
+      {/* GAUCHE */}
       <div className="tb-left">
         <select className="select select--pill" value={scope} onChange={(e)=>setScope(e.target.value)}>
           <option value="tx_event_id">Transactions — Event ID</option>
-          <option value="customers_name">Customers — Name</option>
-          <option value="alerts_msg">Alerts — Message</option>
+          <option value="customers_name">Clients — Nom</option>
+          <option value="alerts_msg">Alertes — Message</option>
         </select>
 
-        <div className="search search--pill">
+        <form className="search search--pill" onSubmit={submitSearch}>
           <FiSearch />
           <input
+            value={query}
+            onChange={(e)=>setQuery(e.target.value)}
             placeholder={
               scope === "tx_event_id"
-                ? "Search for transactions by external id (requires exact match)…"
+                ? "Rechercher une transaction par ID externe…"
                 : scope === "customers_name"
-                ? "Search customers by name…"
-                : "Search alerts by message…"
+                ? "Rechercher un client par nom…"
+                : "Rechercher une alerte par message…"
             }
           />
-        </div>
+        </form>
       </div>
 
-      {/* DROITE = actions + compte */}
+      {/* DROITE */}
       <div className="tb-right">
-        <span className="pg-chip"><FiDatabase /> PG</span>
+        {/* visible seulement pour admin */}
+        <IfRole roles={["admin"]} fallback={null}>
+          <span className="pg-chip"><FiDatabase /> PG</span>
+        </IfRole>
 
-        <button className="icon-btn" title="Search tools">
+        <button className="icon-btn" title="Outils de recherche" onClick={submitSearch}>
           <FiSearch />
         </button>
 
+        {/* Réglages / thème */}
         <div className="dropdown-wrap">
           <button
             className="icon-btn"
@@ -134,15 +168,26 @@ export default function Topbar() {
             <FiSettings />
           </button>
           {showSettings && (
-            <div className="dropdown" style={{ width: 260 }}>
-              <div className="dd-header">Settings</div>
-              <button className="dd-item-btn" onClick={() => setTheme(theme === "light" ? "dark" : "light")}>
-                {theme === "light" ? <FiMoon /> : <FiSun />} &nbsp;Passer en mode {theme === "light" ? "sombre" : "clair"}
+            <div className="dropdown" style={{ width: 280 }}>
+              <div className="dd-header">App Settings</div>
+              <button
+                className="dd-item-btn"
+                onClick={() => setAndPersistTheme(theme === "light" ? "dark" : "light")}
+              >
+                {theme === "light" ? <FiMoon /> : <FiSun />} &nbsp;Mode {theme === "light" ? "sombre" : "clair"}
+              </button>
+              <button
+                className={"dd-item-btn" + (theme === "ultra-glass" ? " active" : "")}
+                onClick={() => setAndPersistTheme(theme === "ultra-glass" ? "dark" : "ultra-glass")}
+                title="Activer le thème Ultra Verre (match Dashboard)"
+              >
+                <FiAperture /> &nbsp;{theme === "ultra-glass" ? "Ultra Verre (ON)" : "Activer Ultra Verre"}
               </button>
             </div>
           )}
         </div>
 
+        {/* Notifications */}
         <div className="dropdown-wrap">
           <button
             className="icon-btn"
@@ -163,7 +208,12 @@ export default function Topbar() {
               <div className="dd-header">🔔 Dernières alertes</div>
               {alerts.length === 0 && <div className="dd-empty">Aucune alerte</div>}
               {alerts.map(a => (
-                <div key={a.id} className="dd-item">
+                <div
+                  key={a.id}
+                  className="dd-item"
+                  onClick={() => { setShowNotif(false); nav(`/alerts/${a.id}`); }}
+                  style={{ cursor:"pointer" }}
+                >
                   <FiAlertCircle />
                   <div className="dd-col">
                     <div className="dd-title">
@@ -182,6 +232,7 @@ export default function Topbar() {
           )}
         </div>
 
+        {/* Compte */}
         <div className="dropdown-wrap">
           <button
             className="avatar-btn"
@@ -190,8 +241,8 @@ export default function Topbar() {
           >
             <span className="avatar">{initial}</span>
             <span className="avatar-info">
-              <span className="role">{user ? "Product Manager" : "Invité"}</span>
-              <span className="company">Acme Inc.</span>
+              <span className="role">{user ? (role || "analyst").toUpperCase() : "Invité"}</span>
+              <span className="company">Compleotech</span>
             </span>
           </button>
 
@@ -201,6 +252,11 @@ export default function Topbar() {
                 <>
                   <div className="dd-header" style={{ fontWeight:600 }}>{user.email}</div>
                   <button className="dd-item-btn" onClick={()=>{ setShowUser(false); nav("/clients"); }}>Mes clients</button>
+                  <IfRole roles={["admin"]} fallback={null}>
+                    <button className="dd-item-btn" onClick={()=>{ setShowUser(false); nav("/reports"); }}>
+                      Admin — Reports
+                    </button>
+                  </IfRole>
                   <button className="dd-item-btn" onClick={signOut}><FiLogOut /> Se déconnecter</button>
                 </>
               ) : (

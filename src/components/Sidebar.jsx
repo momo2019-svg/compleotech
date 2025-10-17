@@ -1,14 +1,29 @@
 // src/components/Sidebar.jsx
 import { NavLink } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { supabase } from "../lib/supabase.js";
+import { supabase } from "@/lib/supabase.js";
+import {
+  FiHome,
+  FiUsers,
+  FiRepeat,
+  FiBell,
+  FiBarChart2,
+  FiFileText,
+  FiUpload,
+  FiDownload,
+  FiAlertTriangle,
+  FiCpu, // 🧠 Icône AI
+} from "react-icons/fi";
+import { GiNetworkBars } from "react-icons/gi"; // ✅ icône pour le graphe
 
-function LinkItem({ to, label, badge }) {
+function LinkItem({ to, label, badge, icon: Icon, end }) {
   return (
     <NavLink
       to={to}
+      end={end}
       className={({ isActive }) => "navlink" + (isActive ? " active" : "")}
     >
+      {Icon ? <Icon className="nav-icon" /> : null}
       <span>{label}</span>
       {badge > 0 && <span className="badge">{badge}</span>}
     </NavLink>
@@ -27,9 +42,7 @@ export default function Sidebar() {
   }
 
   useEffect(() => {
-    loadBadge(); // 1er chargement
-
-    // Realtime: toute modif sur alerts => on recharge le badge
+    loadBadge();
     const ch = supabase
       .channel("alerts-badge")
       .on(
@@ -38,25 +51,41 @@ export default function Sidebar() {
         loadBadge
       )
       .subscribe();
-
-    return () => {
-      supabase.removeChannel(ch);
-    };
+    return () => supabase.removeChannel(ch);
   }, []);
 
   return (
-    <div>
-      <div className="brand" style={{ display: "flex", alignItems: "center", marginBottom: 20 }}>
-        <img src="/image.png" alt="Logo" style={{ width: 40, marginRight: 10 }} />
+    <nav className="sidebar glass-edge ultra-nav" aria-label="Navigation principale">
+      <div
+        className="brand"
+        style={{ display: "flex", alignItems: "center", marginBottom: 20 }}
+      >
+        <img src="/image.png" alt="Logo Compleotech" style={{ width: 40, marginRight: 10 }} />
         <span>Compleotech</span>
       </div>
 
-      <LinkItem to="/" label="Accueil" />
-      <LinkItem to="/clients" label="Clients" />
-      <LinkItem to="/transactions" label="Transactions" />
-      <LinkItem to="/alerts" label="Alertes" badge={openCount} />
-      <LinkItem to="/dashboard" label="Dashboard" />
-      <LinkItem to="/reports" label="Rapports" />
-    </div>
+      <LinkItem to="/"             label="Accueil"       icon={FiHome} end />
+      <LinkItem to="/clients"      label="Clients"       icon={FiUsers} />
+      <LinkItem to="/transactions" label="Transactions"  icon={FiRepeat} />
+      <LinkItem to="/alerts"       label="Alertes"       icon={FiBell} badge={openCount} />
+      <LinkItem to="/dashboard"    label="Dashboard"     icon={FiBarChart2} />
+
+      {/* --- Section IA --- */}
+      <div className="sidebar-divider" />
+      <div className="section-title">AI</div>
+      <LinkItem to="/ai"          label="AI Workspace"  icon={FiCpu} />
+
+      <div className="sidebar-divider" />
+      <div className="section-title">Reporting</div>
+
+      <LinkItem to="/reports"    label="Rapports"       icon={FiFileText} />
+      <LinkItem to="/imports"    label="Imports"        icon={FiUpload} />
+      <LinkItem to="/exports"    label="Exports"        icon={FiDownload} />
+      <LinkItem to="/anomalies"  label="Anomalies"      icon={FiAlertTriangle} />
+      <LinkItem to="/hubs"       label="Hubs (graphe)"  icon={FiBarChart2} />
+
+      {/* ✅ AJOUT : lien direct vers la page Graph Explorer */}
+      <LinkItem to="/graph"      label="Graph Explorer" icon={GiNetworkBars} />
+    </nav>
   );
 }

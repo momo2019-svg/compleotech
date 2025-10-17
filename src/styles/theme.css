@@ -1,0 +1,532 @@
+/* =========================
+   PALETTE & VARIABLES (teal + violet)
+   ========================= */
+:root {
+  --ink: #f9fafb;
+  --muted: #9ca3af;
+
+  /* fond global (peut être remplacé par le thème) */
+  --app-bg: linear-gradient(120deg, #0b1020 0%, #111827 55%);
+
+  --glass-bg: rgba(17, 24, 39, 0.42);
+  --glass-border: rgba(255, 255, 255, 0.08);
+
+  --violet-1: #7c3aed;
+  --violet-2: #9333ea;
+  --violet-3: #8b5cf6;
+
+  --teal-1: #22d3ee; /* accent froid (ultra glass) */
+  --teal-2: #34d399; /* glow vert léger */
+
+  --grid: rgba(255, 255, 255, 0.08);
+}
+
+/* =========================
+   THÈME : ULTRA VERRE
+   (activé par <html data-theme="ultra-glass">)
+   ========================= */
+html[data-theme="ultra-glass"] {
+  /* fond plus “spectaculaire” */
+  --app-bg: radial-gradient(1200px 600px at 100% 0%, #241448 0%, #0b1020 55%) fixed;
+
+  /* verre un peu plus clair + bord violet/teal */
+  --glass-bg: rgba(17, 24, 39, 0.35);
+  --glass-border: rgba(124, 58, 237, 0.35);
+
+  /* renforce la grille des charts */
+  --grid: rgba(255, 255, 255, 0.12);
+}
+
+/* =========================
+   FOND GLOBAL & TEXTE
+   ========================= */
+html, body {
+  height: 100%;
+}
+body {
+  margin: 0;
+  background: var(--app-bg);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* =========================
+   STRUCTURE PRINCIPALE
+   ========================= */
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+  margin-bottom: 22px;
+}
+
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 22px;
+}
+
+.btn-group {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.select {
+  background: rgba(17, 24, 39, 0.4);
+  color: var(--ink);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 14px;
+  outline: none;
+}
+
+.select:focus {
+  border-color: var(--violet-3);
+  box-shadow: 0 0 8px rgba(139, 92, 246, 0.12);
+}
+
+/* =========================
+   BOUTONS
+   ========================= */
+.btn {
+  padding: 7px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--ink);
+  cursor: pointer;
+  transition: all .2s ease;
+  backdrop-filter: blur(6px);
+}
+
+.btn:hover {
+  background: rgba(124, 58, 237, 0.25);
+  border-color: rgba(124, 58, 237, 0.5);
+}
+
+.btn.active {
+  background: rgba(124, 58, 237, 0.4);
+  border-color: rgba(124, 58, 237, 0.8);
+}
+
+.btn.primary {
+  background: linear-gradient(135deg, var(--violet-1), var(--violet-2));
+  color: #fff;
+  border: none;
+}
+.btn.primary:hover {
+  background: linear-gradient(135deg, var(--violet-3), #a855f7);
+}
+
+/* =========================
+   KPI CARDS — ULTRA GLASS
+   ========================= */
+.kpi-card.glass,
+.kpi {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: linear-gradient(145deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+  border: 1px solid var(--glass-border);
+  border-radius: 18px;
+  padding: 18px 22px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+  backdrop-filter: blur(14px);
+  transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+}
+
+.kpi-card.glass:hover,
+.kpi:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 10px 25px rgba(124,58,237,0.35),
+    0 0 0 1px rgba(34,211,238,0.15) inset;
+  border-color: rgba(34,211,238,0.35);
+}
+
+.kpi-ico {
+  font-size: 28px;
+  filter: drop-shadow(0 0 6px rgba(124,58,237,0.45));
+}
+
+.kpi-label {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 4px;
+  letter-spacing: .3px;
+}
+
+.kpi-value {
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+/* =========================
+   CARTES GLOBALES
+   ========================= */
+.card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.25);
+  padding: 16px;
+  backdrop-filter: blur(10px);
+  color: var(--ink);
+  transition: all .2s ease;
+}
+
+.card:hover {
+  border-color: rgba(124,58,237,0.3);
+  box-shadow: 0 10px 30px rgba(124,58,237,0.25);
+}
+
+.card.hdr {
+  font-weight: 600;
+  font-size: 15px;
+  margin-bottom: 10px;
+  color: #d1d5db;
+  letter-spacing: .4px;
+}
+
+.card.body {
+  font-size: 14px;
+  color: #e5e7eb;
+}
+
+/* =========================
+   TABLEAUX
+   ========================= */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  color: var(--ink);
+  background: rgba(255,255,255,0.03);
+  backdrop-filter: blur(6px);
+}
+
+th, td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+th {
+  background: rgba(255,255,255,0.06);
+  font-weight: 600;
+  color: #d1d5db;
+  text-transform: uppercase;
+  letter-spacing: .3px;
+}
+
+tr:hover td {
+  background: rgba(124,58,237,0.12);
+}
+
+/* =========================
+   GRAPHIQUES (Recharts)
+   ========================= */
+.recharts-tooltip-wrapper {
+  backdrop-filter: blur(8px);
+  background: rgba(17,24,39,0.8) !important;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.15);
+}
+
+.recharts-cartesian-grid line {
+  stroke: var(--grid);
+}
+
+.recharts-x-axis text,
+.recharts-y-axis text {
+  fill: #9ca3af;
+}
+
+/* =========================
+   RESPONSIVE
+   ========================= */
+@media (max-width: 1100px) {
+  .kpis { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 700px) {
+  .kpis { grid-template-columns: 1fr; }
+  .toolbar { flex-direction: column; align-items: stretch; }
+  .btn-group { width: 100%; justify-content: center; }
+}
+
+/* =========================
+   BARRE DE FILTRES — ULTRA GLASS
+   ========================= */
+.toolbar {
+  gap: 14px;
+  margin-bottom: 24px;
+  background: linear-gradient(145deg, rgba(255,255,255,0.05), rgba(17,24,39,0.2));
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 14px 18px;
+  backdrop-filter: blur(16px);
+  box-shadow: 0 8px 24px rgba(124,58,237,0.15);
+  transition: all .25s ease;
+}
+
+.toolbar:hover {
+  box-shadow:
+    0 10px 30px rgba(124,58,237,0.25),
+    0 0 0 1px rgba(34,211,238,0.12) inset;
+  border-color: rgba(255,255,255,0.12);
+}
+
+.btn-group button,
+.toolbar .btn,
+.toolbar select {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: var(--ink);
+  font-weight: 500;
+  border-radius: 10px;
+  backdrop-filter: blur(8px);
+  padding: 8px 14px;
+  transition: all .2s ease;
+}
+
+.btn-group button:hover,
+.toolbar .btn:hover,
+.toolbar select:hover {
+  background: rgba(124,58,237,0.25);
+  border-color: rgba(124,58,237,0.5);
+}
+
+.btn-group button.active {
+  background: linear-gradient(145deg, var(--violet-3), var(--violet-1));
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 0 10px rgba(139,92,246,0.4);
+}
+
+.toolbar .btn.primary {
+  background: linear-gradient(135deg, var(--violet-1), var(--violet-2));
+  border: none;
+  color: #fff;
+  box-shadow: 0 0 10px rgba(147,51,234,0.3);
+}
+
+.toolbar .btn.primary:hover {
+  background: linear-gradient(135deg, var(--violet-3), #a855f7);
+  box-shadow: 0 0 12px rgba(147,51,234,0.4);
+}
+
+.toolbar .select {
+  background: rgba(17,24,39,0.6);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: var(--ink);
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 14px;
+  backdrop-filter: blur(8px);
+}
+
+.toolbar .select:focus {
+  outline: none;
+  border-color: #a855f7;
+  box-shadow: 0 0 8px rgba(168,85,247,0.4);
+}
+
+/* =========================
+   BOUTON ULTRA (ULTRA VERRE)
+   ========================= */
+.btn-ultra {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, rgba(124,58,237,0.25), rgba(59,130,246,0.25));
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 10px;
+  padding: 8px 14px;
+  color: var(--ink);
+  font-weight: 500;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 0 10px rgba(124,58,237,0.2);
+  transition: all .25s ease;
+}
+
+.btn-ultra:hover {
+  box-shadow: 0 0 16px rgba(124,58,237,0.35);
+  background: linear-gradient(135deg, rgba(147,51,234,0.35), rgba(59,130,246,0.35));
+}
+
+.btn-ultra.active {
+  background: linear-gradient(135deg, var(--violet-1), var(--violet-2));
+  color: #fff;
+  box-shadow: 0 0 20px rgba(139,92,246,0.45);
+}
+
+/* =========================
+   GLASS EDGE / PULSE & GLOW
+   ========================= */
+.glass-edge {
+  position: relative;
+  background: linear-gradient(145deg, rgba(255,255,255,0.06), rgba(17,24,39,0.18));
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 14px;
+  backdrop-filter: blur(14px);
+  transition: box-shadow .25s ease, border-color .25s ease, transform .15s ease;
+  overflow: hidden;
+}
+
+.glass-edge::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(1200px 500px at 100% 0%, rgba(139,92,246,0.18), transparent 60%);
+  opacity: .65;
+  mix-blend-mode: screen;
+  transition: opacity .25s ease;
+}
+
+.glass-edge:hover {
+  box-shadow:
+    0 12px 28px rgba(124,58,237,0.25),
+    inset 0 0 0 1px rgba(34,211,238,0.18);
+  border-color: rgba(139,92,246,0.35);
+  transform: translateY(-1px);
+}
+
+.glow-teal {
+  box-shadow:
+    0 0 0 1px rgba(34,211,238,0.18) inset,
+    0 10px 30px rgba(34,211,238,0.08),
+    0 0 22px rgba(52,211,153,0.12);
+}
+
+.pulse-soft {
+  animation: pulseSoft 2.4s ease-in-out infinite;
+}
+
+@keyframes pulseSoft {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(34,211,238,0.25); }
+  50%     { box-shadow: 0 0 24px 6px rgba(34,211,238,0.22); }
+}
+
+/* utilitaires */
+.toolbar.glass-edge { }
+.toolbar .btn.primary.pulse-soft { }
+
+[data-theme="ultra-glass"] .glass-edge {
+  background: rgba(30, 30, 60, 0.25);
+  backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(150, 150, 255, 0.25);
+  box-shadow: 0 0 25px rgba(100, 150, 255, 0.2);
+}
+
+[data-theme="ultra-glass"] .btn.active {
+  background: linear-gradient(135deg, rgba(120, 120, 255, 0.3), rgba(90, 0, 255, 0.3));
+  box-shadow: 0 0 12px rgba(150, 100, 255, 0.3);
+}
+
+[data-theme="ultra-glass"] .kpi-card.glass {
+  background: rgba(40, 40, 80, 0.25);
+  border: 1px solid rgba(160, 160, 255, 0.2);
+  backdrop-filter: blur(25px);
+  box-shadow: 0 0 25px rgba(120, 80, 255, 0.25);
+}
+/* ===== Sidebar — Ultra-Glass ===== */
+[data-theme="ultra-glass"] .ultra-nav {
+  background: linear-gradient(180deg, rgba(22, 28, 45, .55), rgba(12, 16, 30, .55));
+  border: 1px solid rgba(160, 160, 255, .18);
+  border-radius: 16px;
+  padding: 14px 12px;
+  margin: 8px;
+  backdrop-filter: blur(18px) saturate(160%);
+  box-shadow: 0 12px 30px rgba(110, 80, 255, .18), inset 0 0 0 1px rgba(34,211,238,.12);
+}
+
+[data-theme="ultra-glass"] .ultra-nav .brand span {
+  color: #eef2ff;
+  text-shadow: 0 0 12px rgba(139,92,246,.35);
+}
+
+[data-theme="ultra-glass"] .ultra-nav .sidebar-divider {
+  height: 1px;
+  margin: 10px 6px;
+  background: linear-gradient(90deg, transparent, rgba(160,160,255,.25), transparent);
+  border-radius: 999px;
+}
+
+[data-theme="ultra-glass"] .ultra-nav .section-title {
+  margin: 8px 8px 6px;
+  font-size: 11px;
+  letter-spacing: .12em;
+  color: rgba(226,232,240,.7);
+  text-shadow: 0 0 10px rgba(124,58,237,.25);
+}
+
+/* Nav links */
+[data-theme="ultra-glass"] .ultra-nav .navlink {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  margin: 2px 4px;
+  border-radius: 12px;
+  color: #e5e7eb;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.06);
+  transition: transform .12s ease, box-shadow .18s ease, background .18s ease, border-color .18s ease;
+  backdrop-filter: blur(10px);
+}
+
+[data-theme="ultra-glass"] .ultra-nav .navlink:hover {
+  background: rgba(147,51,234,.18);
+  border-color: rgba(147,51,234,.45);
+  box-shadow: 0 6px 18px rgba(139,92,246,.25);
+  transform: translateY(-1px);
+}
+
+[data-theme="ultra-glass"] .ultra-nav .navlink.active {
+  background: linear-gradient(135deg, rgba(124,58,237,.35), rgba(34,211,238,.28));
+  color: #ffffff;
+  border-color: transparent;
+  box-shadow: 0 10px 22px rgba(124,58,237,.35), inset 0 0 0 1px rgba(34,211,238,.25);
+}
+
+[data-theme="ultra-glass"] .ultra-nav .nav-icon {
+  font-size: 18px;
+  filter: drop-shadow(0 0 6px rgba(139,92,246,.45));
+}
+
+/* Badge compteur (alertes) */
+[data-theme="ultra-glass"] .ultra-nav .badge {
+  margin-left: auto;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 12px;
+  color: #0b1020;
+  background: linear-gradient(135deg, #22d3ee, #34d399);
+  box-shadow: 0 0 14px rgba(34,211,238,.35);
+}
+/* ======= TOPBAR ======= */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,.08);
+  background: linear-gradient(145deg, rgba(255,255,255,0.04), rgba(17,24,39,0.25));
+  backdrop-filter: blur(12px);
+}
+.topbar-left .brand-mini { color: var(--ink); text-decoration: none; font-weight: 600; }
+.topbar-right { display: flex; gap: 10px; align-items: center; }
+.user-chip { display: flex; gap: 10px; align-items: center; }
+.user-chip .avatar {
+  width: 28px; height: 28px; border-radius: 50%;
+  display: grid; place-items: center; font-weight: 700;
+  background: rgba(124,58,237,.25); border:1px solid rgba(255,255,255,.15);
+}
+.user-chip .email { font-size: 13px; color: var(--muted); }
+

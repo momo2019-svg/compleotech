@@ -1,0 +1,319 @@
+/* =========================
+   Structure principale
+   ========================= */
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+  margin-bottom: 22px;
+}
+
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 22px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.btn-group {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.select {
+  background: rgba(17, 24, 39, 0.4);
+  color: #f9fafb;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 6px 10px;
+  outline: none;
+  font-size: 14px;
+}
+
+.select:focus {
+  border-color: #8b5cf6;
+}
+
+/* =========================
+   Boutons
+   ========================= */
+.btn {
+  padding: 7px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  color: #f3f4f6;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(6px);
+}
+
+.btn:hover {
+  background: rgba(124, 58, 237, 0.25);
+  border-color: rgba(124, 58, 237, 0.5);
+}
+
+.btn.active {
+  background: rgba(124, 58, 237, 0.4);
+  border-color: rgba(124, 58, 237, 0.8);
+}
+
+.btn.primary {
+  background: linear-gradient(135deg, #7c3aed, #9333ea);
+  color: #fff;
+  border: none;
+}
+
+.btn.primary:hover {
+  background: linear-gradient(135deg, #8b5cf6, #a855f7);
+}
+
+/* =========================
+   KPI cards (Ultra Glass)
+   ========================= */
+.kpi-card.glass {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: linear-gradient(145deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 18px;
+  padding: 18px 22px;
+  box-shadow: 0 6px 20px rgba(0,0,0,.25);
+  backdrop-filter: blur(14px);
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+
+.kpi-card.glass:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(124,58,237,.35);
+}
+
+.kpi-ico {
+  font-size: 28px;
+  filter: drop-shadow(0 0 6px rgba(124,58,237,.45));
+}
+
+.kpi-label {
+  font-size: 13px;
+  color: var(--muted, #9ca3af);
+  margin-bottom: 4px;
+  letter-spacing: 0.3px;
+}
+
+.kpi-value {
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--ink, #f9fafb);
+}
+
+/* =========================
+   Cards globales
+   ========================= */
+.card {
+  background: rgba(17, 24, 39, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
+  padding: 16px;
+  backdrop-filter: blur(10px);
+  color: #f3f4f6;
+  transition: all 0.2s ease;
+}
+
+.card:hover {
+  border-color: rgba(124, 58, 237, 0.3);
+  box-shadow: 0 10px 30px rgba(124, 58, 237, 0.25);
+}
+
+.card.hdr {
+  font-weight: 600;
+  font-size: 15px;
+  margin-bottom: 10px;
+  color: #d1d5db;
+  letter-spacing: 0.4px;
+}
+
+.card.body {
+  font-size: 14px;
+  color: #e5e7eb;
+}
+
+/* =========================
+   Table
+   ========================= */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  color: #f3f4f6;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(6px);
+}
+
+th, td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+th {
+  background: rgba(255, 255, 255, 0.06);
+  font-weight: 600;
+  color: #d1d5db;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+tr:hover td {
+  background: rgba(124, 58, 237, 0.12);
+}
+
+/* =========================
+   Graphiques
+   ========================= */
+.recharts-tooltip-wrapper {
+  backdrop-filter: blur(8px);
+  background: rgba(17, 24, 39, 0.8) !important;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.15);
+}
+
+.recharts-cartesian-grid line {
+  stroke: rgba(255, 255, 255, 0.08);
+}
+
+.recharts-x-axis text,
+.recharts-y-axis text {
+  fill: #9ca3af;
+}
+
+/* =========================
+   Responsif
+   ========================= */
+@media (max-width: 1100px) {
+  .kpis {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 700px) {
+  .kpis {
+    grid-template-columns: 1fr;
+  }
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .btn-group {
+    width: 100%;
+    justify-content: center;
+  }
+}
+/* =========================
+   BARRE DE FILTRES ULTRA GLASS
+   ========================= */
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+  background: linear-gradient(145deg, rgba(255,255,255,0.05), rgba(17,24,39,0.2));
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  padding: 14px 18px;
+  backdrop-filter: blur(16px);
+  box-shadow: 0 8px 24px rgba(124,58,237,0.15);
+  transition: all 0.25s ease;
+}
+
+.toolbar:hover {
+  box-shadow: 0 10px 30px rgba(124,58,237,0.25);
+  border-color: rgba(255,255,255,0.12);
+}
+
+.btn-group button,
+.toolbar .btn,
+.toolbar select {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: #f3f4f6;
+  font-weight: 500;
+  border-radius: 10px;
+  backdrop-filter: blur(8px);
+  padding: 8px 14px;
+  transition: all 0.2s ease;
+}
+
+.btn-group button:hover,
+.toolbar .btn:hover,
+.toolbar select:hover {
+  background: rgba(124,58,237,0.25);
+  border-color: rgba(124,58,237,0.5);
+}
+
+.btn-group button.active {
+  background: linear-gradient(145deg, #8b5cf6, #7c3aed);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 0 10px rgba(139,92,246,0.4);
+}
+
+.toolbar .btn.primary {
+  background: linear-gradient(135deg, #7c3aed, #9333ea);
+  border: none;
+  color: #fff;
+  box-shadow: 0 0 10px rgba(147,51,234,0.3);
+}
+
+.toolbar .btn.primary:hover {
+  background: linear-gradient(135deg, #8b5cf6, #a855f7);
+  box-shadow: 0 0 12px rgba(147,51,234,0.4);
+}
+
+.toolbar .select {
+  background: rgba(17,24,39,0.6);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: #f3f4f6;
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 14px;
+  backdrop-filter: blur(8px);
+}
+
+.toolbar .select:focus {
+  outline: none;
+  border-color: #a855f7;
+  box-shadow: 0 0 8px rgba(168,85,247,0.4);
+}
+
+/* =========================
+   BOUTON ULTRA VERRE
+   ========================= */
+.btn-ultra {
+  background: linear-gradient(135deg, rgba(124,58,237,0.25), rgba(59,130,246,0.25));
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 10px;
+  padding: 8px 14px;
+  color: #f9fafb;
+  font-weight: 500;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 0 10px rgba(124,58,237,0.2);
+  transition: all 0.25s ease;
+}
+
+.btn-ultra:hover {
+  box-shadow: 0 0 16px rgba(124,58,237,0.35);
+  background: linear-gradient(135deg, rgba(147,51,234,0.35), rgba(59,130,246,0.35));
+}
+
+.btn-ultra.active {
+  background: linear-gradient(135deg, #7c3aed, #9333ea);
+  color: #fff;
+  box-shadow: 0 0 20px rgba(139,92,246,0.45);
+}

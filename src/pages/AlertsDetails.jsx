@@ -3,9 +3,11 @@ import { useEffect, useState, useCallback } from "react";
 import { Link, useParams } from "react-router-dom";
 import { supabase } from "@/lib/supabase.js";
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+/* ========= ENV (aligné avec Dashboard) ========= */
+const FUNCTIONS_URL = import.meta.env.VITE_SUPABASE_FUNCTIONS_URL;
+const ANON          = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+/* ========= UI helpers ========= */
 function Row({ label, value }) {
   return (
     <div style={{ display:"grid", gridTemplateColumns:"160px 1fr", gap:8, padding:"6px 0" }}>
@@ -14,24 +16,29 @@ function Row({ label, value }) {
     </div>
   );
 }
+const chip = (s) =>
+  s === "OPEN" ? "chip open" : s === "UNDER_REVIEW" ? "chip review" : "chip closed";
 
+/* ========= Page ========= */
 export default function AlertsDetails() {
   const { id } = useParams();
 
-  const [alert, setAlert] = useState(null);
-  const [cust, setCust] = useState(null);
-  const [txn, setTxn] = useState(null);
-  const [finding, setFinding] = useState(null);
+  const [alert, setAlert]       = useState(null);
+  const [cust, setCust]         = useState(null);
+  const [txn, setTxn]           = useState(null);
+  const [finding, setFinding]   = useState(null);
 
-  const [loading, setLoading] = useState(true);
-  const [running, setRunning] = useState(false);
-  const [err, setErr] = useState("");
+  const [loading, setLoading]   = useState(true);
+  const [running, setRunning]   = useState(false);
+  const [err, setErr]           = useState("");
+  const [saving, setSaving]     = useState(false);
 
+  /* --------- LOAD --------- */
   const load = useCallback(async () => {
     setErr("");
     setLoading(true);
 
-    // 1) Alerte (sélection souple pour éviter les colonnes manquantes)
+    // 1) Alerte
     const { data: a, error: eA } = await supabase
       .from("alerts")
       .select("*")
@@ -45,7 +52,7 @@ export default function AlertsDetails() {
     }
     setAlert(a);
 
-    // 2) Client (si colonne + valeur)
+    // 2) Client
     let custData = null;
     if (Object.prototype.hasOwnProperty.call(a, "customer_id") && a.customer_id) {
       const { data } = await supabase
@@ -57,7 +64,7 @@ export default function AlertsDetails() {
     }
     setCust(custData);
 
-    // 3) Transaction: a.transaction_id sinon dernier lien alert_transactions
+    // 3) Transaction liée
     let txnId = null;
     if (Object.prototype.hasOwnProperty.call(a, "transaction_id") && a.transaction_id) {
       txnId = a.transaction_id;
@@ -98,39 +105,37 @@ export default function AlertsDetails() {
 
   useEffect(() => {
     load();
-    // live sur ai_findings pour cette alerte
+    // live: ai_findings + alerts (changement de statut)
     const ch = supabase
-      .channel(`ai-findings-${id}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "ai_findings", filter: `alert_id=eq.${id}` },
-        load
-      )
+      .channel(`alert-details-${id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "ai_findings", filter: `alert_id=eq.${id}` }, load)
+      .on("postgres_changes", { event: "*", schema: "public", table: "alerts",          filter: `id=eq.${id}` }, load)
       .subscribe();
     return () => supabase.removeChannel(ch);
   }, [id, load]);
 
-  // --- IMPORTANT: fallback si invoke échoue (réseau/CORS) ---
+  /* --------- ACTIONS --------- */
+  // Run AI via Edge Functions (invoke -> fallback HTTP Functions URL)
   async function runAI() {
     try {
       setErr("");
       setRunning(true);
 
-      // 1) Chemin normal via supabase-js
+      // 1) invoke
       const { error } = await supabase.functions.invoke("agent-run", {
         body: { alert_id: id },
       });
       if (error) throw error;
 
     } catch (e1) {
-      // 2) Fallback direct sur l'URL des Edge Functions (avec ANON KEY)
+      // 2) fallback direct
       try {
-        const url = `${SUPABASE_URL}/functions/v1/agent-run`;
-        const resp = await fetch(url, {
+        const resp = await fetch(`${FUNCTIONS_URL}/agent-run`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+            "apikey": ANON,
+            "Authorization": `Bearer ${ANON}`,
           },
           body: JSON.stringify({ alert_id: id }),
         });
@@ -150,8 +155,43 @@ export default function AlertsDetails() {
     setRunning(false);
   }
 
+  // Avancer le statut (RPC si dispo, sinon UPDATE)
+  async function advanceStatus() {
+    if (!alert) return;
+    setSaving(true);
+    const next = { OPEN: "UNDER_REVIEW", UNDER_REVIEW: "CLOSED", CLOSED: "CLOSED" };
+    const to = next[alert.status] || alert.status;
+
+    // RPC (optionnelle)
+    const { error: rpcErr } = await supabase.rpc("set_alert_status", {
+      p_alert_id: alert.id,
+      p_new_status: to,
+      p_note: null,
+      p_assignee: null,
+    });
+
+    if (rpcErr) {
+      const { error: updErr } = await supabase
+        .from("alerts")
+        .update({ status: to })
+        .eq("id", alert.id);
+      if (updErr) {
+        setErr(updErr.message);
+        setSaving(false);
+        return;
+      }
+    }
+    await load();
+    setSaving(false);
+  }
+
+  /* --------- RENDU --------- */
   if (loading) {
-    return <div className="card"><div className="card body">Chargement…</div></div>;
+    return (
+      <div className="card">
+        <div className="card body">Chargement…</div>
+      </div>
+    );
   }
 
   if (!alert) {
@@ -168,18 +208,22 @@ export default function AlertsDetails() {
   }
 
   return (
-    <div>
+    <div style={{ display:"grid", gap:16 }}>
       <div className="card">
-        <div className="card hdr" style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-          <div>
-            <Link to="/alerts" className="btn" style={{ marginRight:8 }}>← Retour</Link>
+        <div className="card hdr" style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:8 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+            <Link to="/alerts" className="btn">← Retour</Link>
             <strong>Alerte #{alert.id}</strong>
+            <span className={chip(alert.status)}>{alert.status}</span>
           </div>
           <div style={{ display:"flex", gap:8, alignItems:"center" }}>
-            <span className={`chip ${alert.status === "OPEN" ? "open" : alert.status === "UNDER_REVIEW" ? "review" : "closed"}`}>
-              {alert.status}
-            </span>
-            <button className="btn btn--brand" onClick={runAI} disabled={running}>
+            <button className="btn" onClick={load}>Rafraîchir</button>
+            {alert.status !== "CLOSED" && (
+              <button className="btn primary" onClick={advanceStatus} disabled={saving}>
+                {saving ? "Maj…" : "Avancer le statut"}
+              </button>
+            )}
+            <button className="btn" onClick={runAI} disabled={running}>
               {running ? "Génération…" : "Run AI Findings"}
             </button>
           </div>
@@ -217,19 +261,17 @@ export default function AlertsDetails() {
             <div className="card hdr">AI Findings</div>
             <div className="card body">
               {err && <div style={{ color:"#ef4444", marginBottom:10 }}>{err}</div>}
-
               {!finding && (
                 <div style={{ color:"#94a3b8" }}>
                   Aucun résultat pour le moment. Clique “Run AI Findings”.
                 </div>
               )}
-
               {finding && (
                 <div style={{ display:"grid", gap:10 }}>
-                  <Row label="Flagged activity" value={finding.flagged_activity} />
-                  <Row label="Account risk" value={finding.account_risk} />
-                  <Row label="Recommendation" value={finding.recommendation} />
-                  <Row label="Confidence" value={finding.confidence} />
+                  <Row label="Flagged activity"   value={finding.flagged_activity} />
+                  <Row label="Account risk"       value={finding.account_risk} />
+                  <Row label="Recommendation"     value={finding.recommendation} />
+                  <Row label="Confidence"         value={finding.confidence} />
                   <div>
                     <div style={{ color:"#94a3b8", marginBottom:6 }}>Reason codes</div>
                     <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
