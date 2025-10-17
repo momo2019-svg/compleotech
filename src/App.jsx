@@ -16,9 +16,10 @@ import Anomalies from "./pages/Anomalies.jsx";
 import Auth from "./Auth.jsx";
 import Graph from "./pages/Graph.jsx";
 
-// ✅ ajout
-import AI from "./pages/AI.jsx";
+// ✅ Page IA
+import AIWorkspace from "./pages/AIWorkspace.jsx";
 
+import Auth from "./Auth.jsx";
 import { ProfileProvider, RequireRole, useProfile } from "./lib/profile.jsx";
 
 function AppGate({ children }) {
@@ -40,11 +41,11 @@ export default function App() {
               <Route path="/alerts" element={<Alerts />} />
               <Route path="/alerts/:id" element={<AlertsDetails />} />
 
-              {/* CRUD accessibles à tous les rôles connectés */}
+              {/* CRUD */}
               <Route path="/clients" element={<Clients />} />
               <Route path="/transactions" element={<Transactions />} />
 
-              {/* Reporting : admin ET analyst */}
+              {/* Reporting */}
               <Route
                 path="/reports"
                 element={
@@ -96,12 +97,12 @@ export default function App() {
                 }
               />
 
-              {/* ✅ AI */}
+              {/* ✅ IA */}
               <Route
                 path="/ai"
                 element={
                   <RequireRole roles={["admin", "analyst"]}>
-                    <AI />
+                    <AIWorkspace />
                   </RequireRole>
                 }
               />
